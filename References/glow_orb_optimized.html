@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Linked Knowledge Net</title>
+  <title>Linked Knowledge Net - Optimized</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { background: #f8fafc; min-height: 100vh; overflow: hidden; font-family: 'Segoe UI', sans-serif; }
@@ -33,7 +33,7 @@
       transform: translate(-50%, -50%);
       pointer-events: none;
       text-align: center;
-      z-index: 10; /* Ensure text is always above the net */
+      z-index: 10;
     }
     
     h1 { 
@@ -62,10 +62,17 @@
   <script>
   const KnowledgeNet = (function() {
     let canvas, ctx, width, height;
+    
+    // 1. Create an off-screen canvas to cache the links
+    let linkCanvas = document.createElement('canvas');
+    let linkCtx = linkCanvas.getContext('2d');
+    
     let nodes = [];
     let solvedTasks = 50;
-    const MAX_NODES = 300;
+    // Track the last state to know when to update the cache
+    let lastRenderedTasks = -1; 
 
+    const MAX_NODES = 300;
     const baseColors = [[67, 56, 202], [14, 165, 233], [6, 182, 212]];
     const peakColors = [[217, 70, 239], [244, 63, 94], [139, 92, 246]];
 
@@ -76,7 +83,6 @@
 
     class Node {
       constructor(i) {
-        // Fixed spiral positioning (Phyllotaxis)
         const spacing = 22; 
         const angle = i * 137.5 * (Math.PI / 180);
         const radius = spacing * Math.sqrt(i);
@@ -100,6 +106,40 @@
       }
     }
 
+    // 2. Heavy logic moved to a standalone function
+    function updateLinkCache(cx, cy) {
+      // Clear the off-screen canvas
+      linkCtx.clearRect(0, 0, width, height);
+      
+      const activeCount = Math.min(solvedTasks, MAX_NODES);
+      const powerFactor = Math.max(0, (solvedTasks - 300) / 700);
+      const linkAlpha = 0.15 + (powerFactor * 0.15);
+
+      linkCtx.lineWidth = 2;
+
+      // Draw links to the off-screen canvas
+      for (let i = 0; i < activeCount; i++) {
+          // Optimization: Logic loop reduced slightly as per original intent
+          for (let j = i + 1; j < 2 * activeCount / 3; j++) {
+            const n1 = nodes[i];
+            const n2 = nodes[j];
+            
+            // We use raw node X/Y because links don't pulse positions
+            const dist = Math.hypot(n1.x - n2.x, n1.y - n2.y);
+            
+            if (dist < 100) {
+              const strength = (1 - (dist / 300)) ** 3 * 1.5;
+              linkCtx.strokeStyle = `rgba(99, 102, 241, ${linkAlpha * strength})`;
+              linkCtx.lineWidth = strength * 2;
+              linkCtx.beginPath();
+              linkCtx.moveTo(cx + n1.x, cy + n1.y);
+              linkCtx.lineTo(cx + n2.x, cy + n2.y);
+              linkCtx.stroke();
+            }
+          }
+      }
+    }
+
     function init() {
       canvas = document.getElementById('glow-canvas');
       ctx = canvas.getContext('2d');
@@ -112,6 +152,8 @@
       slider.addEventListener('input', (e) => {
         solvedTasks = parseInt(e.target.value);
         document.getElementById('task-val').textContent = solvedTasks;
+        // Note: We don't call updateLinkCache here directly; 
+        // we let the animation loop detect the change to keep it synced.
       });
 
       function animate(t) {
@@ -120,43 +162,27 @@
 
         const cx = width / 2;
         const cy = height / 2;
+        
+        // 3. Check if we need to redraw the static web
+        if (solvedTasks !== lastRenderedTasks) {
+            updateLinkCache(cx, cy);
+            lastRenderedTasks = solvedTasks;
+        }
+
+        // 4. Draw the cached image (Very fast)
+        ctx.drawImage(linkCanvas, 0, 0);
+
+        // 5. Draw the pulsing nodes on top (Dynamic)
         const activeCount = Math.min(solvedTasks, MAX_NODES);
         const powerFactor = Math.max(0, (solvedTasks - 300) / 700);
 
-        // Pre-calculate visible nodes data
-        const visibleData = [];
         for (let i = 0; i < activeCount; i++) {
-          visibleData.push(nodes[i].getDrawData(t * 0.1, powerFactor));
-        }
-
-        // 1. Draw Links (Behind nodes)
-        ctx.lineWidth = 2;
-        const linkAlpha = 0.15 + (powerFactor * 0.15);
-        for (let i = 0; i < activeCount; i++) {
-          for (let j = i + 1; j < 2*activeCount/3; j++) { // Link to nearby neighbors in index
-            const d1 = visibleData[i];
-            const d2 = visibleData[j];
-            // Add a distance-based alpha to make links fade out smoothly
-            const dist = Math.hypot(d1.x - d2.x, d1.y - d2.y);
-            if (dist < 100) {
-              const strength = (1 - (dist / 300))**3*1.5; // 1 at close range, 0 at 70px
-              ctx.strokeStyle = `rgba(99, 102, 241, ${linkAlpha * strength})`;
-              ctx.lineWidth = strength * 2;
-              ctx.beginPath();
-              ctx.moveTo(cx + d1.x, cy + d1.y);
-              ctx.lineTo(cx + d2.x, cy + d2.y);
-              ctx.stroke();
-            }
-          }
-        }
-
-        // 2. Draw Nodes
-        visibleData.forEach(d => {
+          const d = nodes[i].getDrawData(t * 0.1, powerFactor);
           ctx.beginPath();
           ctx.arc(cx + d.x, cy + d.y, d.size, 0, Math.PI * 2);
           ctx.fillStyle = d.color + d.alpha + ')';
           ctx.fill();
-        });
+        }
 
         requestAnimationFrame(animate);
       }
@@ -166,6 +192,13 @@
     function resize() {
       width = canvas.width = window.innerWidth;
       height = canvas.height = window.innerHeight;
+      
+      // Update off-screen canvas size
+      linkCanvas.width = width;
+      linkCanvas.height = height;
+      
+      // Force a redraw of the links next frame
+      lastRenderedTasks = -1;
     }
 
     init();
