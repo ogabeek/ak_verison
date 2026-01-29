@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Leagues of Code | Linked Knowledge Net</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #f8fafc; min-height: 100vh; font-family: 'Segoe UI', sans-serif; overflow-x: hidden; }
+    
+    /* 1. CANVAS POSITIONING */
+    #glow-canvas { 
+      position: absolute; /* Scrolls with the page */
+      top: 0; left: 0; 
+      width: 100%; 
+      z-index: 1; 
+      pointer-events: none;
+    }
+
+    /* 2. CONTROLS (Fixed UI) */
+    .controls {
+      position: fixed;
+      top: 20px; right: 20px;
+      background: rgba(255, 255, 255, 0.9);
+      padding: 20px;
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+      z-index: 100;
+      width: 260px;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(0,0,0,0.05);
+    }
+    .controls label { display: block; margin-bottom: 5px; color: #94a3b8; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; }
+    input[type=range] { width: 100%; cursor: pointer; accent-color: #6366f1; }
+    .task-display { font-size: 1.8rem; font-weight: 800; color: #1e293b; display: block; margin-bottom: 10px; }
+
+    /* 3. LAYOUT */
+    .content-wrapper {
+      position: relative;
+      z-index: 10;
+      width: 100%;
+    }
+
+    .hero {
+      height: 90vh; 
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center; 
+      text-align: center;
+      padding: 20px;
+      /* Vital for JS calculation */
+      position: relative;
+    }
+
+    .hero h1 { 
+      font-size: 5.5rem; 
+      color: #1e293b; 
+      font-weight: 900; 
+      letter-spacing: -0.02em;
+      line-height: 1;
+      margin-bottom: 20px;
+      text-shadow: 0 0 20px rgba(255,255,255,0.8), 0 0 40px rgba(255,255,255,0.5);
+    }
+
+    .hero p {
+      font-size: 1.2rem;
+      color: #64748b;
+      max-width: 600px;
+      font-weight: 500;
+      /* Added transition for smooth visibility toggle */
+      transition: opacity 0.4s ease;
+    }
+
+    /* 4. INFO BADGES */
+    .info-badges-wrapper {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+      position: relative;
+      z-index: 15;
+      padding: 0 20px;
+    }
+
+    .info-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(8px);
+      padding: 12px 24px;
+      border-radius: 50px;
+      text-decoration: none;
+      color: #475569;
+      font-weight: 600;
+      font-size: 0.95rem;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      border: 1px solid rgba(255, 255, 255, 0.6);
+    }
+
+    .info-badge:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 20px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      background: #ffffff;
+      color: #2563eb;
+      border-color: #cbd5e1;
+    }
+
+    .info-badge span.emoji { font-size: 1.2rem; }
+
+    /* 5. COURSE CARDS */
+    .courses-section { padding: 40px 24px 60px; max-width: 1400px; margin: 0 auto; }
+    .section-header { margin-bottom: 32px; }
+    .section-header h2 { font-size: 1.5rem; font-weight: 600; color: #1f2937; }
+
+    .courses-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 24px;
+    }
+
+    .course-card {
+      background: rgba(255, 255, 255, 0.75);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-radius: 20px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+      overflow: hidden;
+      transition: all 0.3s ease;
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .course-card:hover { transform: translateY(-6px); box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1); background: rgba(255, 255, 255, 0.9); }
+
+    .card-header { padding: 24px; display: flex; align-items: center; gap: 16px; }
+    .course-icon { width: 56px; height: 56px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 26px; }
+    
+    .course-icon.blue { background: #dbeafe; }
+    .course-icon.green { background: #d1fae5; }
+    .course-icon.orange { background: #fef3c7; }
+    .course-icon.purple { background: #ede9fe; }
+
+    .course-info h3 { font-size: 1.3rem; font-weight: 700; color: #1f2937; }
+    .course-level { font-size: 0.85rem; color: #6b7280; }
+
+    .card-body { padding: 0 24px 24px; flex-grow: 1; }
+    .course-description { color: #4b5563; font-size: 0.9rem; line-height: 1.6; margin-bottom: 16px; }
+    
+    .course-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
+    .stat { text-align: center; padding: 10px; background: rgba(248, 250, 252, 0.5); border-radius: 10px; }
+    .stat-value { font-weight: 700; font-size: 1.1rem; }
+    .stat-label { font-size: 0.65rem; color: #6b7280; text-transform: uppercase; }
+
+    .course-btn {
+      display: block; width: 100%; padding: 14px; border-radius: 12px;
+      font-weight: 600; text-align: center; text-decoration: none; color: white;
+    }
+    .course-btn.blue { background: #3b82f6; }
+    .course-btn.green { background: #10b981; }
+    .course-btn.orange { background: #f59e0b; }
+
+    .coming-soon { opacity: 0.6; }
+
+    @media (max-width: 768px) {
+      .hero h1 { font-size: 3.2rem; }
+      .hero { height: 70vh; }
+      .info-badges-wrapper { flex-direction: column; align-items: stretch; padding: 0 40px; }
+      .info-badge { justify-content: center; }
+    }
+  </style>
+</head>
+<body>
+
+  <canvas id="glow-canvas"></canvas>
+
+  <div class="controls">
+    <label>Learning Progress</label>
+    <span id="task-val" class="task-display">50</span>
+    <input type="range" id="task-slider" min="0" max="1000" value="50">
+  </div>
+
+  <div class="content-wrapper">
+    <header id="hero-section" class="hero">
+      <h1>Leagues of Code</h1>
+      <p id="hero-subtitle">Master programming as your Knowledge Net expands.</p>
+    </header>
+
+    <div class="info-badges-wrapper">
+      <a href="https://www.leaguesofcode.com" target="_blank" class="info-badge">
+        <span class="emoji">🌐</span>
+        <span>Our Company</span>
+      </a>
+      <a href="https://www.leaguesofcode.com/curriculum" target="_blank" class="info-badge">
+        <span class="emoji">🗺️</span>
+        <span>View Curriculum</span>
+      </a>
+      <a href="https://www.ioai-spain.org/" target="_blank" class="info-badge">
+        <span class="emoji">🇪🇸</span>
+        <span>IOAI Spain</span>
+      </a>
+      <a href="https://www.ioai-spain.org/tenerife-summer-camp/" target="_blank" class="info-badge">
+        <span class="emoji">☀️</span>
+        <span>Tenerife Summer Camp</span>
+      </a>
+    </div>
+
+    <section class="courses-section">
+      <div class="section-header">
+        <h2>Available Courses</h2>
+      </div>
+
+      <div class="courses-grid">
+        <div class="course-card">
+          <div class="card-header">
+            <div class="course-icon blue">🐍</div>
+            <div class="course-info">
+              <h3>Python 1</h3>
+              <span class="course-level">Beginner</span>
+            </div>
+          </div>
+          <div class="card-body">
+            <p class="course-description">Fundamentals of Python with hands-on projects and interactive exercises.</p>
+            <div class="course-stats">
+              <div class="stat"><div class="stat-value">12</div><div class="stat-label">Units</div></div>
+              <div class="stat"><div class="stat-value">4h</div><div class="stat-label">Time</div></div>
+              <div class="stat"><div class="stat-value">5</div><div class="stat-label">Tasks</div></div>
+            </div>
+            <a href="#" class="course-btn blue">Start Learning</a>
+          </div>
+        </div>
+
+        <div class="course-card">
+          <div class="card-header">
+            <div class="course-icon green">🚀</div>
+            <div class="course-info">
+              <h3>Python 2</h3>
+              <span class="course-level">Advanced</span>
+            </div>
+          </div>
+          <div class="card-body">
+            <p class="course-description">OOP, web frameworks, and real-world application development.</p>
+            <div class="course-stats">
+              <div class="stat"><div class="stat-value">18</div><div class="stat-label">Units</div></div>
+              <div class="stat"><div class="stat-value">6h</div><div class="stat-label">Time</div></div>
+              <div class="stat"><div class="stat-value">8</div><div class="stat-label">Tasks</div></div>
+            </div>
+            <a href="#" class="course-btn green">Start Learning</a>
+          </div>
+        </div>
+
+        <div class="course-card">
+          <div class="card-header">
+            <div class="course-icon orange">📐</div>
+            <div class="course-info">
+              <h3>Math 101</h3>
+              <span class="course-level">Foundation</span>
+            </div>
+          </div>
+          <div class="card-body">
+            <p class="course-description">Interactive problem-solving and visual learning tools for mathematics.</p>
+            <div class="course-stats">
+              <div class="stat"><div class="stat-value">15</div><div class="stat-label">Units</div></div>
+              <div class="stat"><div class="stat-value">5h</div><div class="stat-label">Time</div></div>
+              <div class="stat"><div class="stat-value">6</div><div class="stat-label">Tasks</div></div>
+            </div>
+            <a href="#" class="course-btn orange">Start Learning</a>
+          </div>
+        </div>
+
+        <div class="course-card coming-soon">
+          <div class="card-header">
+            <div class="course-icon purple">🧩</div>
+            <div class="course-info">
+              <h3>Algorithms</h3>
+              <span class="course-level">Advanced</span>
+            </div>
+          </div>
+          <div class="card-body">
+            <p class="course-description">Data structures and algorithms for technical interviews.</p>
+            <a href="#" class="course-btn" style="background: #94a3b8;">Coming Soon</a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+  const KnowledgeNet = (function() {
+    let canvas, ctx, width, height, heroHeight;
+    let linkCanvas = document.createElement('canvas');
+    let linkCtx = linkCanvas.getContext('2d');
+    let nodes = [];
+    let solvedTasks = 50;
+    let lastRenderedTasks = -1; 
+
+    const MAX_NODES = 300;
+    const baseColors = [[67, 56, 202], [14, 165, 233], [6, 182, 212]];
+    const peakColors = [[217, 70, 239], [244, 63, 94], [139, 92, 246]];
+
+    function lerpColor(color1, color2, factor) {
+      const result = color1.map((c, i) => Math.round(c + factor * (color2[i] - color1[i])));
+      return `rgba(${result[0]}, ${result[1]}, ${result[2]},`;
+    }
+
+    class Node {
+      constructor(i) {
+        const spacing = 22; 
+        const angle = i * 137.5 * (Math.PI / 180);
+        const radius = spacing * Math.sqrt(i);
+        this.x = Math.cos(angle) * radius;
+        this.y = Math.sin(angle) * radius;
+        this.baseSize = 2 + Math.random() * 2;
+        this.pulseOffset = Math.random() * Math.PI * 2;
+        this.pulseSpeed = 0.03 + Math.random() * 0.04;
+        this.colorIdx = i % baseColors.length;
+        this.growthSensitivity = 0.5 + Math.random() * 1.5;
+      }
+      getDrawData(t, powerFactor) {
+        const shimmer = Math.sin(t * this.pulseSpeed + this.pulseOffset);
+        const pSize = this.baseSize + (shimmer * 1.5) + (powerFactor * 18 * this.growthSensitivity);
+        const color = lerpColor(baseColors[this.colorIdx], peakColors[this.colorIdx], powerFactor);
+        const alpha = 0.2 + (powerFactor * 0.4) + (shimmer * 0.1);
+        return { x: this.x, y: this.y, size: pSize, color, alpha };
+      }
+    }
+
+    function updateLinkCache(cx, cy) {
+      linkCtx.clearRect(0, 0, width, height);
+      const activeCount = Math.min(solvedTasks, MAX_NODES);
+      const powerFactor = Math.max(0, (solvedTasks - 300) / 700);
+      const linkAlpha = 0.15 + (powerFactor * 0.15);
+
+      for (let i = 0; i < activeCount; i++) {
+          for (let j = i + 1; j < 2 * activeCount / 3; j++) {
+            const n1 = nodes[i];
+            const n2 = nodes[j];
+            const dist = Math.hypot(n1.x - n2.x, n1.y - n2.y);
+            if (dist < 100) {
+              const strength = (1 - (dist / 300)) ** 3 * 1.5;
+              linkCtx.strokeStyle = `rgba(99, 102, 241, ${linkAlpha * strength})`;
+              linkCtx.lineWidth = strength * 2;
+              linkCtx.beginPath();
+              linkCtx.moveTo(cx + n1.x, cy + n1.y);
+              linkCtx.lineTo(cx + n2.x, cy + n2.y);
+              linkCtx.stroke();
+            }
+          }
+      }
+    }
+
+    function init() {
+      canvas = document.getElementById('glow-canvas');
+      ctx = canvas.getContext('2d');
+      window.addEventListener('resize', resize);
+      resize(); // Initial sizing
+
+      for (let i = 0; i < MAX_NODES; i++) nodes.push(new Node(i));
+
+      const slider = document.getElementById('task-slider');
+      const heroSubtitle = document.getElementById('hero-subtitle');
+
+      slider.addEventListener('input', (e) => {
+        solvedTasks = parseInt(e.target.value);
+        document.getElementById('task-val').textContent = solvedTasks;
+
+        // Logic to hide text if "obstructed" (value > 65)
+        if (solvedTasks > 65) {
+          heroSubtitle.style.opacity = '0';
+          heroSubtitle.style.pointerEvents = 'none'; // Prevent highlighting invisible text
+        } else {
+          heroSubtitle.style.opacity = '1';
+          heroSubtitle.style.pointerEvents = 'auto';
+        }
+      });
+
+      function animate(t) {
+        ctx.fillStyle = '#f8fafc';
+        ctx.fillRect(0, 0, width, height);
+
+        const cx = width / 2;
+        const cy = heroHeight / 2;
+        
+        if (solvedTasks !== lastRenderedTasks) {
+            updateLinkCache(cx, cy);
+            lastRenderedTasks = solvedTasks;
+        }
+
+        ctx.drawImage(linkCanvas, 0, 0);
+        const activeCount = Math.min(solvedTasks, MAX_NODES);
+        const powerFactor = Math.max(0, (solvedTasks - 300) / 700);
+
+        for (let i = 0; i < activeCount; i++) {
+          const d = nodes[i].getDrawData(t * 0.1, powerFactor);
+          ctx.beginPath();
+          ctx.arc(cx + d.x, cy + d.y, d.size, 0, Math.PI * 2);
+          ctx.fillStyle = d.color + d.alpha + ')';
+          ctx.fill();
+        }
+        requestAnimationFrame(animate);
+      }
+      requestAnimationFrame(animate);
+    }
+
+    function resize() {
+      width = canvas.width = document.documentElement.clientWidth;
+      
+      height = canvas.height = Math.max(
+        document.body.scrollHeight, 
+        document.documentElement.scrollHeight,
+        document.documentElement.offsetHeight
+      );
+      
+      const hero = document.getElementById('hero-section');
+      heroHeight = hero ? hero.offsetHeight : window.innerHeight * 0.9;
+
+      linkCanvas.width = width;
+      linkCanvas.height = height;
+      lastRenderedTasks = -1; 
+    }
+    
+    setTimeout(resize, 100);
+    
+    init();
+  })();
+  </script>
+</body>
+</html>

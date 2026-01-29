@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Leagues of Code | Laboratory</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap');
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body { 
+      background-color: #ffffff;
+      /* Grid Paper Pattern */
+      background-image: 
+        linear-gradient(#e5e7eb 1px, transparent 1px),
+        linear-gradient(90deg, #e5e7eb 1px, transparent 1px);
+      background-size: 20px 20px; 
+      color: #374151; 
+      font-family: 'Space Mono', monospace; 
+      overflow-x: hidden;
+    }
+
+    /* CANVAS */
+    #glow-canvas { opacity: 0.3; position:absolute; top:0; left:0; width:100%; pointer-events: none;}
+
+    /* CONTROLS */
+    .controls {
+      position: fixed; top: 20px; right: 20px; z-index: 100;
+      background: #fff; border: 2px solid #0055ff;
+      padding: 15px; width: 250px;
+    }
+    .controls label { font-size: 0.7rem; font-weight: bold; color: #0055ff; letter-spacing: 1px; }
+    input[type=range] { width: 100%; accent-color: #0055ff; }
+
+    /* HERO */
+    .hero { height: 80vh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; position: relative; z-index: 10;}
+    
+    .hero h1 { 
+      font-size: 3.5rem; color: #0055ff; 
+      text-shadow: 2px 2px 0 #cbd5e1;
+      background: #fff; padding: 10px 20px; border: 1px solid #0055ff;
+      margin-bottom: 20px;
+    }
+    
+    .hero p { background: #fff; padding: 5px; border: 1px solid #e5e7eb; transition: opacity 0.4s; }
+
+    /* BADGES */
+    .info-badges-wrapper { display: flex; gap: 10px; justify-content: center; margin-bottom: 50px; flex-wrap: wrap; z-index: 15; position: relative;}
+    .info-badge {
+      background: #fff; border: 1px solid #94a3b8; color: #475569;
+      padding: 8px 12px; font-size: 0.8rem; text-decoration: none;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .info-badge:hover { border-color: #0055ff; color: #0055ff; background: #f0f7ff; }
+
+    /* CARDS */
+    .courses-section { max-width: 1300px; margin: 0 auto; padding: 20px; }
+    .section-header h2 { 
+      font-size: 1.2rem; color: #0055ff; text-transform: uppercase; letter-spacing: 2px;
+      border-left: 5px solid #0055ff; padding-left: 15px; margin-bottom: 30px;
+    }
+
+    .courses-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; }
+
+    .course-card {
+      background: #fff;
+      border: 1px solid #9ca3af;
+      position: relative;
+      padding: 24px;
+      display: flex; flex-direction: column;
+      box-shadow: 5px 5px 0 rgba(0,0,0,0.05);
+    }
+    
+    /* Technical corners */
+    .course-card::before { content: ""; position: absolute; top: -1px; left: -1px; width: 10px; height: 10px; border-top: 2px solid #0055ff; border-left: 2px solid #0055ff; }
+    .course-card::after { content: ""; position: absolute; bottom: -1px; right: -1px; width: 10px; height: 10px; border-bottom: 2px solid #0055ff; border-right: 2px solid #0055ff; }
+
+    .card-header { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; border-bottom: 1px solid #e5e7eb; padding-bottom: 15px; }
+    .course-icon { font-size: 1.5rem; filter: grayscale(100%); }
+    .course-info h3 { font-size: 1.1rem; color: #111; font-weight: 700; margin: 0;}
+    .course-level { font-size: 0.7rem; border: 1px solid #0055ff; color: #0055ff; padding: 2px 6px; border-radius: 10px; display: inline-block; margin-top: 5px;}
+
+    .card-body { flex-grow: 1; display: flex; flex-direction: column; }
+    .course-description { font-size: 0.85rem; color: #64748b; margin-bottom: 20px; line-height: 1.6; flex-grow: 1;}
+    
+    .course-stats { display: flex; justify-content: space-between; margin-bottom: 20px; font-size: 0.8rem; background: #f8fafc; padding: 10px; border: 1px solid #e2e8f0; }
+
+    .course-btn {
+      display: block; width: 100%; padding: 12px;
+      background: #0055ff; color: #fff;
+      text-align: center; text-decoration: none; font-size: 0.9rem;
+      transition: 0.2s;
+    }
+    .course-btn:hover { background: #0033cc; box-shadow: 4px 4px 0 rgba(0,0,0,0.2); }
+    
+    .coming-soon { opacity: 0.6; }
+    .coming-soon .course-btn { background: #94a3b8; cursor: not-allowed; }
+
+    @media (max-width: 768px) {
+      .hero h1 { font-size: 2.2rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <canvas id="glow-canvas"></canvas>
+
+  <div class="controls">
+    <label>Learning Progress</label>
+    <span id="task-val" style="display:block; font-size:1.5rem; margin-bottom:10px;">50</span>
+    <input type="range" id="task-slider" min="0" max="1000" value="50">
+  </div>
+
+  <div class="content-wrapper">
+    <header id="hero-section" class="hero">
+      <h1>Leagues of Code</h1>
+      <p id="hero-subtitle">Blueprint: v2.0 // Status: Online</p>
+    </header>
+
+    <div class="info-badges-wrapper">
+      <a href="https://www.leaguesofcode.com" target="_blank" class="info-badge">
+        <span>Company</span>
+      </a>
+      <a href="https://www.leaguesofcode.com/curriculum" target="_blank" class="info-badge">
+        <span>Curriculum</span>
+      </a>
+      <a href="https://www.ioai-spain.org/" target="_blank" class="info-badge">
+        <span>IOAI Spain</span>
+      </a>
+      <a href="https://www.ioai-spain.org/tenerife-summer-camp/" target="_blank" class="info-badge">
+        <span>Tenerife Summer Camp</span>
+      </a>
+    </div>
+
+    <section class="courses-section">
+      <div class="section-header">
+        <h2>Available Courses</h2>
+      </div>
+
+      <div class="courses-grid">
+        <div class="course-card">
+          <div class="card-header">
+            <div class="course-icon">🐍</div>
+            <div class="course-info">
+              <h3>Python 1</h3>
+              <span class="course-level">Beginner</span>
+            </div>
+          </div>
+          <div class="course-description">Fundamentals of Python with hands-on projects and interactive exercises.</div>
+          <div class="course-stats">
+            <div>12 Units</div>
+            <div>4h Time</div>
+          </div>
+          <a href="#" class="course-btn">Start Learning</a>
+        </div>
+
+        <div class="course-card">
+          <div class="card-header">
+            <div class="course-icon">🚀</div>
+            <div class="course-info">
+              <h3>Python 2</h3>
+              <span class="course-level">Advanced</span>
+            </div>
+          </div>
+          <div class="course-description">OOP, web frameworks, and real-world application development.</div>
+          <div class="course-stats">
+            <div>18 Units</div>
+            <div>6h Time</div>
+          </div>
+          <a href="#" class="course-btn">Start Learning</a>
+        </div>
+
+        <div class="course-card">
+          <div class="card-header">
+            <div class="course-icon">📐</div>
+            <div class="course-info">
+              <h3>Math 101</h3>
+              <span class="course-level">Foundation</span>
+            </div>
+          </div>
+          <div class="course-description">Interactive problem-solving and visual learning tools for mathematics.</div>
+          <div class="course-stats">
+            <div>15 Units</div>
+            <div>5h Time</div>
+          </div>
+          <a href="#" class="course-btn">Start Learning</a>
+        </div>
+
+        <div class="course-card coming-soon">
+          <div class="card-header">
+            <div class="course-icon">🧩</div>
+            <div class="course-info">
+              <h3>Algorithms</h3>
+              <span class="course-level">Advanced</span>
+            </div>
+          </div>
+          <div class="course-description">Data structures and algorithms for technical interviews.</div>
+          <a href="#" class="course-btn">Coming Soon</a>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+  const KnowledgeNet = (function() {
+    let canvas, ctx, width, height, heroHeight;
+    let linkCanvas = document.createElement('canvas');
+    let linkCtx = linkCanvas.getContext('2d');
+    let nodes = [];
+    let solvedTasks = 50;
+    let lastRenderedTasks = -1; 
+
+    const MAX_NODES = 300;
+    // Laboratory Colors (Blue/Grey)
+    const baseColors = [[0, 85, 255], [100, 116, 139], [148, 163, 184]];
+    const peakColors = [[37, 99, 235], [59, 130, 246], [29, 78, 216]];
+
+    function lerpColor(color1, color2, factor) {
+      const result = color1.map((c, i) => Math.round(c + factor * (color2[i] - color1[i])));
+      return `rgba(${result[0]}, ${result[1]}, ${result[2]},`;
+    }
+
+    class Node {
+      constructor(i) {
+        const spacing = 22; 
+        const angle = i * 137.5 * (Math.PI / 180);
+        const radius = spacing * Math.sqrt(i);
+        this.x = Math.cos(angle) * radius;
+        this.y = Math.sin(angle) * radius;
+        this.baseSize = 2 + Math.random() * 2;
+        this.pulseOffset = Math.random() * Math.PI * 2;
+        this.pulseSpeed = 0.03 + Math.random() * 0.04;
+        this.colorIdx = i % baseColors.length;
+      }
+      getDrawData(t, powerFactor) {
+        const shimmer = Math.sin(t * this.pulseSpeed + this.pulseOffset);
+        const pSize = this.baseSize + (shimmer * 1.5) + (powerFactor * 12);
+        const color = lerpColor(baseColors[this.colorIdx], peakColors[this.colorIdx], powerFactor);
+        const alpha = 0.4 + (powerFactor * 0.4) + (shimmer * 0.1);
+        return { x: this.x, y: this.y, size: pSize, color, alpha };
+      }
+    }
+
+    function updateLinkCache(cx, cy) {
+      linkCtx.clearRect(0, 0, width, height);
+      const activeCount = Math.min(solvedTasks, MAX_NODES);
+      const powerFactor = Math.max(0, (solvedTasks - 300) / 700);
+      const linkAlpha = 0.2 + (powerFactor * 0.2);
+
+      for (let i = 0; i < activeCount; i++) {
+          for (let j = i + 1; j < 2 * activeCount / 3; j++) {
+            const n1 = nodes[i];
+            const n2 = nodes[j];
+            const dist = Math.hypot(n1.x - n2.x, n1.y - n2.y);
+            if (dist < 100) {
+              const strength = (1 - (dist / 300)) ** 3 * 1.5;
+              linkCtx.strokeStyle = `rgba(0, 85, 255, ${linkAlpha * strength})`;
+              linkCtx.lineWidth = strength * 1.5;
+              linkCtx.beginPath();
+              linkCtx.moveTo(cx + n1.x, cy + n1.y);
+              linkCtx.lineTo(cx + n2.x, cy + n2.y);
+              linkCtx.stroke();
+            }
+          }
+      }
+    }
+
+    function init() {
+      canvas = document.getElementById('glow-canvas');
+      ctx = canvas.getContext('2d');
+      window.addEventListener('resize', resize);
+      resize();
+
+      for (let i = 0; i < MAX_NODES; i++) nodes.push(new Node(i));
+
+      document.getElementById('task-slider').addEventListener('input', (e) => {
+        solvedTasks = parseInt(e.target.value);
+        document.getElementById('task-val').textContent = solvedTasks;
+        const sub = document.getElementById('hero-subtitle');
+        if(solvedTasks > 65) sub.style.opacity = '0'; else sub.style.opacity = '1';
+      });
+
+      function animate(t) {
+        ctx.clearRect(0, 0, width, height); // FIXED
+
+        const cx = width / 2;
+        const cy = heroHeight / 2;
+        
+        if (solvedTasks !== lastRenderedTasks) {
+            updateLinkCache(cx, cy);
+            lastRenderedTasks = solvedTasks;
+        }
+
+        ctx.drawImage(linkCanvas, 0, 0);
+        const activeCount = Math.min(solvedTasks, MAX_NODES);
+        const powerFactor = Math.max(0, (solvedTasks - 300) / 700);
+
+        for (let i = 0; i < activeCount; i++) {
+          const d = nodes[i].getDrawData(t * 0.1, powerFactor);
+          ctx.beginPath();
+          ctx.arc(cx + d.x, cy + d.y, d.size, 0, Math.PI * 2);
+          ctx.fillStyle = d.color + d.alpha + ')';
+          ctx.fill();
+        }
+        requestAnimationFrame(animate);
+      }
+      requestAnimationFrame(animate);
+    }
+
+    function resize() {
+      width = canvas.width = document.documentElement.clientWidth;
+      height = canvas.height = Math.max(document.body.scrollHeight, document.documentElement.offsetHeight);
+      const hero = document.getElementById('hero-section');
+      heroHeight = hero ? hero.offsetHeight : window.innerHeight * 0.9;
+      linkCanvas.width = width;
+      linkCanvas.height = height;
+      lastRenderedTasks = -1; 
+    }
+    
+    setTimeout(resize, 100);
+    init();
+  })();
+  </script>
+</body>
+</html>
