@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Leagues of Code | Solarized Light</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&display=swap');
+
+    :root {
+      --base03:    #002b36;
+      --base02:    #073642;
+      --base01:    #586e75;
+      --base00:    #657b83;
+      --base0:     #839496;
+      --base1:     #93a1a1;
+      --base2:     #eee8d5; /* Footer Background */
+      --base3:     #fdf6e3; /* Main Background */
+      --yellow:    #b58900;
+      --orange:    #cb4b16;
+      --red:       #dc322f;
+      --magenta:   #d33682;
+      --violet:    #6c71c4;
+      --blue:      #268bd2;
+      --cyan:      #2aa198;
+      --green:     #859900;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body { 
+      background-color: var(--base3); 
+      color: var(--base00); 
+      font-family: 'Fira Code', monospace; 
+      overflow-x: hidden;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    #glow-canvas { opacity: 0.5; mix-blend-mode: multiply; position:absolute; top:0; left:0; width:100%; pointer-events: none;}
+
+    a { text-decoration: none; }
+
+    /* CONTROLS */
+    .controls {
+      position: fixed; top: 20px; right: 20px; z-index: 100;
+      background: var(--base2); padding: 20px;
+      border: 1px solid var(--base1); border-radius: 4px; width: 250px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    }
+    .controls label { font-size: 0.8rem; color: var(--base01); display: block; margin-bottom: 5px;}
+    .task-display { font-size: 1.2rem; color: var(--blue); font-weight: bold; }
+    input[type=range] { width: 100%; accent-color: var(--cyan); }
+
+    /* HERO */
+    .hero { height: 80vh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; position: relative; z-index: 10; padding: 20px;}
+    
+    .hero h1 { color: var(--base01); font-size: 3.5rem; font-weight: 600; line-height: 1.2; margin-bottom: 20px;}
+    .hero h1::before { content: "# "; color: var(--yellow); }
+    
+    .hero p { color: var(--base1); font-size: 1.1rem; margin-top: 10px; transition: opacity 0.4s; }
+    .hero p::before { content: "/* "; color: var(--green); }
+    .hero p::after { content: " */"; color: var(--green); }
+
+    /* COURSES */
+    .courses-section { max-width: 1400px; margin: 0 auto; padding: 40px; position: relative; z-index: 10; padding-bottom: 80px; }
+    .section-header h2 { color: var(--base01); margin-bottom: 30px; border-bottom: 2px solid var(--base2); padding-bottom: 10px; display: inline-block; font-size: 1.5rem; }
+
+    .courses-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; }
+
+    .course-card {
+      background: var(--base2);
+      box-shadow: 4px 4px 0px rgba(0,0,0,0.05);
+      border: 1px solid rgba(0,0,0,0.05);
+      padding: 24px;
+      border-radius: 6px;
+      display: flex; flex-direction: column;
+      transition: transform 0.2s;
+    }
+    .course-card:hover { transform: translateY(-4px); box-shadow: 6px 6px 0px rgba(0,0,0,0.08); border-color: var(--cyan); }
+
+    .card-header { display: flex; align-items: center; gap: 15px; margin-bottom: 15px; }
+    .course-icon { font-size: 1.8rem; }
+    .course-info h3 { color: var(--blue); font-size: 1.2rem; margin-bottom: 4px; font-weight: 600; }
+    .course-level { color: var(--magenta); font-size: 0.75rem; text-transform: uppercase; font-weight: 600;}
+
+    .course-description { color: var(--base00); font-size: 0.9rem; margin-bottom: 20px; line-height: 1.5; flex-grow: 1; }
+
+    .course-stats { display: flex; gap: 15px; font-size: 0.8rem; margin-bottom: 20px; border-top: 1px dotted var(--base1); padding-top: 15px; }
+    .stat { color: var(--base01); }
+    .stat span { color: var(--violet); font-weight: 600; }
+
+    .course-btn {
+      background: var(--cyan); color: var(--base3); padding: 12px;
+      text-align: center; border-radius: 4px; font-weight: 600; transition: background 0.2s;
+    }
+    .course-btn:hover { background: var(--blue); }
+    .coming-soon { opacity: 0.7; }
+    .coming-soon .course-btn { background: var(--base1); cursor: not-allowed; }
+
+    /* Progress Bar */
+    .progress-section { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; }
+    .progress-track { flex: 1; height: 6px; background: var(--base1); border-radius: 3px; overflow: hidden; }
+    .progress-fill { height: 100%; background: var(--cyan); width: 0%; transition: width 0.3s ease, background-color 0.3s ease; }
+    .pct-text { font-size: 0.8rem; color: var(--base01); font-weight: 600; min-width: 40px; }
+    
+    /* =======================
+       LIGHT FOOTER STYLES
+       ======================= */
+    .main-footer {
+      margin-top: auto;
+      background-color: var(--base2); /* Light Beige Background */
+      color: var(--base00); /* Dark Text */
+      position: relative;
+      z-index: 20;
+      border-top: 1px solid rgba(0,0,0,0.05);
+      
+      /* Subtle Blue Grid pattern */
+      background-image: 
+        linear-gradient(to right, rgba(38, 139, 210, 0.08) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(38, 139, 210, 0.08) 1px, transparent 1px);
+      background-size: 40px 40px;
+      padding: 60px 20px;
+    }
+
+    .footer-content {
+      max-width: 1000px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 40px;
+    }
+
+    /* CTA Card */
+    .footer-cta {
+      background-color: var(--base3); /* Lightest Card */
+      color: var(--base00);
+      border: 2px solid var(--base1);
+      border-radius: 6px;
+      padding: 20px;
+      box-shadow: 6px 6px 0px 0px rgba(0,0,0,0.05);
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      transition: transform 0.2s;
+    }
+    .footer-cta:hover { transform: translateY(-2px); box-shadow: 8px 8px 0px 0px rgba(0,0,0,0.1); border-color: var(--blue); }
+    
+    .cta-text h2 { font-size: 1.8rem; color: var(--blue); font-weight: 600; margin-bottom: 10px; line-height: 1.2; }
+    .cta-text p { font-size: 1rem; color: var(--base01); line-height: 1.5; }
+
+    .cta-btn {
+      background-color: var(--blue);
+      color: var(--base3);
+      padding: 15px 30px;
+      border: 2px solid var(--blue);
+      border-radius: 4px;
+      font-weight: 600;
+      text-transform: uppercase;
+      display: inline-block;
+      text-align: center;
+      box-shadow: 4px 4px 0px 0px var(--base1);
+      transition: all 0.2s;
+    }
+    .cta-btn:hover { background-color: var(--cyan); border-color: var(--cyan); box-shadow: 6px 6px 0px 0px var(--base1); transform: translate(-2px, -2px); }
+    .cta-btn:active { transform: translate(0, 0); box-shadow: 2px 2px 0px 0px var(--base1); }
+
+    /* Footer Navigation (Badges) */
+    .footer-badges { 
+      display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px;
+    }
+    .footer-badge {
+      background: var(--base3); 
+      color: var(--base00);
+      border: 1px solid var(--base1);
+      padding: 6px 12px; border-radius: 4px; font-size: 0.8rem;
+      transition: 0.2s; display: flex; align-items: center; gap: 6px;
+    }
+    .footer-badge:hover { border-color: var(--blue); color: var(--blue); transform: translateY(-1px); }
+
+    /* Bottom Info Section */
+    .footer-bottom {
+      display: flex;
+      flex-direction: column;
+      gap: 30px;
+      padding-top: 30px;
+      border-top: 1px dashed var(--base1);
+    }
+
+    .footer-brand h3 { color: var(--base01); font-size: 1.2rem; margin-bottom: 10px; font-weight: bold; }
+    .footer-brand p, .footer-brand a { color: var(--base00); font-size: 0.9rem; display: block; margin-bottom: 5px; }
+    .footer-brand a:hover { color: var(--blue); text-decoration: underline; }
+
+    .contact-grid { display: flex; flex-direction: column; gap: 15px; }
+
+    .contact-pill {
+      background-color: var(--base3);
+      border: 2px solid var(--base1);
+      padding: 12px 20px;
+      border-radius: 4px;
+      display: flex; align-items: center; gap: 12px;
+      color: var(--base01);
+      font-weight: 600;
+      transition: 0.2s;
+    }
+    .contact-pill:hover { border-color: var(--blue); color: var(--blue); box-shadow: 2px 2px 0 rgba(0,0,0,0.05); }
+    .contact-pill svg { stroke: var(--base00); }
+
+    /* Desktop Layout Adjustments */
+    @media (min-width: 768px) {
+      .footer-cta { flex-direction: row; align-items: center; justify-content: space-between; }
+      .cta-text { flex: 1; margin-right: 40px; }
+      .footer-bottom { flex-direction: row; justify-content: space-between; align-items: flex-start; }
+      .contact-grid { width: 320px; }
+      .hero h1 { font-size: 2.5rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <canvas id="glow-canvas"></canvas>
+
+  <div class="controls">
+    <label>Learning Progress</label>
+    <span id="task-val" class="task-display">50</span>
+    <input type="range" id="task-slider" min="0" max="1000" value="50">
+  </div>
+
+  <div class="content-wrapper">
+    <header id="hero-section" class="hero">
+      <h1>Leagues of Code</h1>
+      <p id="hero-subtitle">Master programming as your Knowledge Net expands.</p>
+    </header>
+
+    <section class="courses-section">
+      <div class="section-header">
+        <h2>Available Courses</h2>
+      </div>
+
+      <div class="courses-grid">
+        <div class="course-card" id="card-297" data-courseid="297">
+          <div class="card-header">
+            <div class="course-icon">🐍</div>
+            <div class="course-info">
+              <h3>Python 1</h3>
+              <span class="course-level">Beginner</span>
+            </div>
+          </div>
+          <div class="course-description">Fundamentals of Python with hands-on projects and interactive exercises.</div>
+          <div class="course-stats">
+            <div class="stat"><span class="activity-count">--</span> activities</div>
+            <div class="stat"><span>~5h</span></div>
+          </div>
+          <div class="progress-section">
+            <div class="progress-track"><div class="progress-fill"></div></div>
+            <span class="pct-text">--%</span>
+          </div>
+          <a href="/course/view.php?id=297" class="course-btn">Go to Course</a>
+        </div>
+
+        <div class="course-card" id="card-308" data-courseid="308">
+          <div class="card-header">
+            <div class="course-icon">🚀</div>
+            <div class="course-info">
+              <h3>Python 2</h3>
+              <span class="course-level">Advanced</span>
+            </div>
+          </div>
+          <div class="course-description">OOP, data structures, and real-world application development.</div>
+          <div class="course-stats">
+            <div class="stat"><span class="activity-count">--</span> activities</div>
+            <div class="stat"><span>~8h</span></div>
+          </div>
+          <div class="progress-section">
+            <div class="progress-track"><div class="progress-fill"></div></div>
+            <span class="pct-text">--%</span>
+          </div>
+          <a href="/course/view.php?id=308" class="course-btn">Go to Course</a>
+        </div>
+
+        <div class="course-card" id="card-220" data-courseid="220">
+          <div class="card-header">
+            <div class="course-icon">📐</div>
+            <div class="course-info">
+              <h3>Math 101</h3>
+              <span class="course-level">Foundation</span>
+            </div>
+          </div>
+          <div class="course-description">Algebra and Calculus refresher with interactive STACK exercises.</div>
+          <div class="course-stats">
+            <div class="stat"><span class="activity-count">--</span> activities</div>
+            <div class="stat"><span>~6h</span></div>
+          </div>
+          <div class="progress-section">
+            <div class="progress-track"><div class="progress-fill"></div></div>
+            <span class="pct-text">--%</span>
+          </div>
+          <a href="/course/view.php?id=220" class="course-btn">Go to Course</a>
+        </div>
+
+        <div class="course-card coming-soon" id="card-0">
+          <div class="card-header">
+            <div class="course-icon">🤖</div>
+            <div class="course-info">
+              <h3>Math for ML</h3>
+              <span class="course-level">Advanced</span>
+            </div>
+          </div>
+          <div class="course-description">Linear algebra, calculus, and probability for machine learning.</div>
+          <div class="course-stats">
+            <div class="stat">Launching: <span>Feb 2026</span></div>
+          </div>
+          <a href="#" class="course-btn">Coming Soon</a>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <footer class="main-footer">
+    <div class="footer-content">
+
+      <div class="footer-cta">
+        <div class="cta-text">
+          <h2>Discover personalised learning with us.</h2>
+          <p>Once a meeting is booked, our representative will reach out and offer direction for the next steps.</p>
+        </div>
+        <div>
+          <a href="https://harbour-space.typeform.com/to/gxFFkidp?typeform-source=join.leaguesofcode.com" target="_blank" class="cta-btn">Book a Free Class</a>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <div class="footer-brand">
+          <div class="footer-badges">
+            <a href="https://www.leaguesofcode.com" target="_blank" class="footer-badge"><span class="emoji">🌐</span> Company</a>
+            <a href="https://www.leaguesofcode.com/curriculum" target="_blank" class="footer-badge"><span class="emoji">🗺️</span> Curriculum</a>
+            <a href="https://www.ioai-spain.org/" target="_blank" class="footer-badge"><span class="emoji">🇪🇸</span> IOAI Spain</a>
+            <a href="https://www.ioai-spain.org/tenerife-summer-camp/" target="_blank" class="footer-badge"><span class="emoji">☀️</span> Tenerife Summer Camp</a>
+          </div>
+
+          <h3>Leagues of Code | Powered By Harbour.Space</h3>
+          <p>Carrer de Rosa Sensat, 9-11, 08005 Barcelona</p>
+          <div style="margin-top:10px;">
+            <a href="/terms">Terms & Conditions</a>
+            <a href="/privacy">Privacy Policy</a>
+          </div>
+          <p style="margin-top:15px; font-size: 0.8rem; opacity: 0.7;">© 2026 Leagues of Code. All Rights Reserved</p>
+        </div>
+
+        <div class="contact-grid">
+          <div class="contact-pill">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7"></path><rect x="2" y="4" width="20" height="16" rx="2"></rect></svg>
+            <span>hello@leaguesofcode.space</span>
+          </div>
+          <div class="contact-pill">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13.832 16.568a1 1 0 0 0 1.213-.303l.355-.465A2 2 0 0 1 17 15h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2A18 18 0 0 1 2 4a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-.8 1.6l-.468.351a1 1 0 0 0-.292 1.233 14 14 0 0 0 6.392 6.384"></path></svg>
+            <span>+34 671 498 303</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+  // Course IDs to fetch
+  const COURSE_IDS = [297, 308, 220];
+
+  // Fetch real progress from Moodle API
+  async function fetchProgress() {
+    try {
+      const response = await fetch(`/local/courseprogress.php?courses=${COURSE_IDS.join(',')}`);
+      const json = await response.json();
+
+      if (!json.success) {
+        console.warn('Progress API error:', json.error);
+        return;
+      }
+
+      const data = json.data;
+      const isLoggedIn = json.userid > 0;
+
+      COURSE_IDS.forEach(courseId => {
+        const card = document.getElementById(`card-${courseId}`);
+        if (!card) return;
+
+        const courseData = data[courseId];
+        if (!courseData || courseData.error) {
+          updateCardStatus(card, 0, false, 0, 0, isLoggedIn);
+          return;
+        }
+
+        updateCardStatus(
+          card,
+          courseData.progress || 0,
+          courseData.enrolled || false,
+          courseData.completed || 0,
+          courseData.total || 0,
+          isLoggedIn
+        );
+      });
+
+    } catch (err) {
+      console.error('Failed to fetch progress:', err);
+    }
+  }
+
+  // Update card with real data
+  function updateCardStatus(card, progress, enrolled, completed, total, isLoggedIn) {
+    const fill = card.querySelector('.progress-fill');
+    const text = card.querySelector('.pct-text');
+    const btn = card.querySelector('.course-btn');
+    const activityCount = card.querySelector('.activity-count');
+
+    // Update progress bar
+    if (fill) {
+      fill.style.width = `${progress}%`;
+      if (progress === 0) {
+        fill.style.backgroundColor = "var(--base1)";
+      } else if (progress === 100) {
+        fill.style.backgroundColor = "var(--green)";
+      } else {
+        fill.style.backgroundColor = "var(--cyan)";
+      }
+    }
+    if (text) text.textContent = `${progress}%`;
+
+    // Update activity count
+    if (activityCount) {
+      activityCount.textContent = total > 0 ? total : '--';
+    }
+
+    // Update button text
+    if (btn && card.dataset.courseid) {
+      if (!isLoggedIn) {
+        btn.textContent = "View Course";
+      } else if (!enrolled) {
+        btn.textContent = "Enroll Now";
+      } else if (progress === 0) {
+        btn.textContent = "Start Course";
+      } else if (progress === 100) {
+        btn.textContent = "Review Course";
+      } else {
+        btn.textContent = "Continue Learning";
+      }
+    }
+  }
+
+  // Fetch progress on page load
+  document.addEventListener('DOMContentLoaded', fetchProgress);
+
+  const KnowledgeNet = (function() {
+    let canvas, ctx, width, height, heroHeight;
+    let linkCanvas = document.createElement('canvas');
+    let linkCtx = linkCanvas.getContext('2d');
+    let nodes = [];
+    let solvedTasks = 50;
+    let lastRenderedTasks = -1; 
+
+    const MAX_NODES = 300;
+    // Solarized Palette colors for nodes
+    const baseColors = [[181, 137, 0], [203, 75, 22], [42, 161, 152]]; // Yellow, Orange, Cyan
+    const peakColors = [[220, 50, 47], [211, 54, 130], [38, 139, 210]]; // Red, Magenta, Blue
+
+    function lerpColor(color1, color2, factor) {
+      const result = color1.map((c, i) => Math.round(c + factor * (color2[i] - color1[i])));
+      return `rgba(${result[0]}, ${result[1]}, ${result[2]},`;
+    }
+
+    class Node {
+      constructor(i) {
+        const spacing = 22; 
+        const angle = i * 137.5 * (Math.PI / 180);
+        const radius = spacing * Math.sqrt(i);
+        this.x = Math.cos(angle) * radius;
+        this.y = Math.sin(angle) * radius;
+        this.baseSize = 2 + Math.random() * 2;
+        this.pulseOffset = Math.random() * Math.PI * 2;
+        this.pulseSpeed = 0.03 + Math.random() * 0.04;
+        this.colorIdx = i % baseColors.length;
+      }
+      getDrawData(t, powerFactor) {
+        const shimmer = Math.sin(t * this.pulseSpeed + this.pulseOffset);
+        const pSize = this.baseSize + (shimmer * 1.5) + (powerFactor * 14);
+        const color = lerpColor(baseColors[this.colorIdx], peakColors[this.colorIdx], powerFactor);
+        const alpha = 0.5 + (powerFactor * 0.4) + (shimmer * 0.1);
+        return { x: this.x, y: this.y, size: pSize, color, alpha };
+      }
+    }
+
+    function updateLinkCache(cx, cy) {
+      linkCtx.clearRect(0, 0, width, height);
+      const activeCount = Math.min(solvedTasks, MAX_NODES);
+      const powerFactor = Math.max(0, (solvedTasks - 300) / 700);
+      const linkAlpha = 0.2 + (powerFactor * 0.2);
+
+      for (let i = 0; i < activeCount; i++) {
+          for (let j = i + 1; j < 2 * activeCount / 3; j++) {
+            const n1 = nodes[i];
+            const n2 = nodes[j];
+            const dist = Math.hypot(n1.x - n2.x, n1.y - n2.y);
+            if (dist < 100) {
+              const strength = (1 - (dist / 300)) ** 3 * 1.5;
+              linkCtx.strokeStyle = `rgba(147, 161, 161, ${linkAlpha * strength})`; // Base1 color
+              linkCtx.lineWidth = strength * 2;
+              linkCtx.beginPath();
+              linkCtx.moveTo(cx + n1.x, cy + n1.y);
+              linkCtx.lineTo(cx + n2.x, cy + n2.y);
+              linkCtx.stroke();
+            }
+          }
+      }
+    }
+
+    function init() {
+      canvas = document.getElementById('glow-canvas');
+      ctx = canvas.getContext('2d');
+      window.addEventListener('resize', resize);
+      resize();
+
+      for (let i = 0; i < MAX_NODES; i++) nodes.push(new Node(i));
+
+      document.getElementById('task-slider').addEventListener('input', (e) => {
+        solvedTasks = parseInt(e.target.value);
+        document.getElementById('task-val').textContent = solvedTasks;
+        const sub = document.getElementById('hero-subtitle');
+        if(solvedTasks > 65) sub.style.opacity = '0'; else sub.style.opacity = '1';
+      });
+
+      function animate(t) {
+        ctx.clearRect(0, 0, width, height); // CLEARS CANVAS FOR LIGHT MODE
+
+        const cx = width / 2;
+        const cy = heroHeight / 2;
+        
+        if (solvedTasks !== lastRenderedTasks) {
+            updateLinkCache(cx, cy);
+            lastRenderedTasks = solvedTasks;
+        }
+
+        ctx.drawImage(linkCanvas, 0, 0);
+        const activeCount = Math.min(solvedTasks, MAX_NODES);
+        const powerFactor = Math.max(0, (solvedTasks - 300) / 700);
+
+        for (let i = 0; i < activeCount; i++) {
+          const d = nodes[i].getDrawData(t * 0.1, powerFactor);
+          ctx.beginPath();
+          ctx.arc(cx + d.x, cy + d.y, d.size, 0, Math.PI * 2);
+          ctx.fillStyle = d.color + d.alpha + ')';
+          ctx.fill();
+        }
+        requestAnimationFrame(animate);
+      }
+      requestAnimationFrame(animate);
+    }
+
+    function resize() {
+      width = canvas.width = document.documentElement.clientWidth;
+      height = canvas.height = Math.max(document.body.scrollHeight, document.documentElement.offsetHeight);
+      const hero = document.getElementById('hero-section');
+      heroHeight = hero ? hero.offsetHeight : window.innerHeight * 0.9;
+      linkCanvas.width = width;
+      linkCanvas.height = height;
+      lastRenderedTasks = -1; 
+    }
+    
+    setTimeout(resize, 100);
+    init();
+  })();
+  </script>
+</body>
+</html>
