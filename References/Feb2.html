@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Leagues of Code | Student Dashboard</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&display=swap');
+
+    :root {
+      /* Brand Palette from constants.ts */
+      --primary:       #1E3CD9;
+      --primary-dark:  #1836CF;
+      --primary-hover: #2644E0;
+      
+      --blue:          #3959ff;
+      --sky-blue:      #38c9ff;
+      --yellow:        #f8cd46;
+      --red:           #eb4869;
+      --purple:        #cf75ff;
+      --green:         #23c175;
+
+      --white:         #ffffff;
+      --black:         #000000;
+      
+      --gray-dark:     #232339;
+      --gray:          #595a6c;
+      --gray-text:     #626262;
+      
+      --bg-page:       #FAFAFA;
+      --bg-grid:       #F4F4F4;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body { 
+      background-color: var(--bg-page); 
+      color: var(--gray-text); 
+      font-family: 'Fira Code', monospace; 
+      overflow-x: hidden;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    /* Grid Background Effect on Body */
+    body::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background-image: 
+        linear-gradient(to right, var(--bg-grid) 1px, transparent 1px),
+        linear-gradient(to bottom, var(--bg-grid) 1px, transparent 1px);
+      background-size: 60px 60px;
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    #glow-canvas { opacity: 0.6; mix-blend-mode: multiply; position:absolute; top:0; left:0; width:100%; pointer-events: none;}
+
+    a { text-decoration: none; }
+
+    /* CONTROLS (Global) */
+    .controls {
+      position: fixed; top: 20px; right: 20px; z-index: 100;
+      background: var(--white); padding: 20px;
+      border: 2px solid var(--bg-grid); border-radius: 4px; width: 250px;
+      box-shadow: 4px 4px 0px 0px rgba(0,0,0,0.05);
+    }
+    .controls label { font-size: 0.8rem; color: var(--gray); display: block; margin-bottom: 5px;}
+    .task-display { font-size: 1.2rem; color: var(--primary); font-weight: bold; }
+    input[type=range] { width: 100%; accent-color: var(--primary); cursor: pointer; }
+
+    /* HERO */
+    .hero { height: 80vh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; position: relative; z-index: 10; padding: 20px;}
+    
+    .hero h1 { 
+      color: var(--primary); 
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      font-size: 3.5rem; font-weight: 600; line-height: 1.2; margin-bottom: 20px;
+    }
+
+    /* COURSES */
+    .courses-section { max-width: 1400px; margin: 0 auto; padding: 40px; position: relative; z-index: 10; padding-bottom: 80px; }
+    .section-header h2 { color: var(--gray-dark); margin-bottom: 30px; border-bottom: 2px solid var(--bg-grid); padding-bottom: 10px; display: inline-block; font-size: 1.5rem; }
+
+    .courses-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 40px; }
+
+    /* COURSE WRAPPER (Card + Slider) */
+    .course-wrapper { display: flex; flex-direction: column; gap: 15px; }
+
+    /* COURSE CARD */
+    .course-card {
+      background: var(--white);
+      box-shadow: 4px 4px 0px 0px rgba(0,0,0,0.1); 
+      border: 1px solid var(--bg-grid);
+      border-radius: 6px;
+      display: flex; flex-direction: column;
+      transition: all 0.2s ease;
+      height: 100%;
+      overflow: hidden;
+    }
+    .course-card:hover { 
+      transform: translateY(-4px); 
+      box-shadow: 8px 8px 0px 0px var(--primary); 
+      border-color: var(--primary); 
+    }
+
+    /* Card Layout Internals */
+    .card-top { padding: 24px; border-bottom: 1px solid var(--bg-grid); display: flex; align-items: flex-start; justify-content: space-between; }
+    .course-icon { font-size: 2rem; background: var(--bg-page); padding: 8px; border-radius: 8px; border: 1px solid var(--bg-grid); }
+    
+    .course-info { flex-grow: 1; padding: 24px; display: flex; flex-direction: column; gap: 12px; }
+    .course-info h3 { color: var(--gray-dark); font-size: 1.2rem; font-weight: 600; }
+    .course-level { font-size: 0.75rem; text-transform: uppercase; font-weight: 600; padding: 4px 8px; border-radius: 4px; display: inline-block; align-self: flex-start; margin-bottom: 8px;}
+    
+    /* Level Colors */
+    .lvl-beg { color: var(--green); background: rgba(35, 193, 117, 0.1); }
+    .lvl-adv { color: var(--purple); background: rgba(207, 117, 255, 0.1); }
+    .lvl-fnd { color: var(--sky-blue); background: rgba(56, 201, 255, 0.1); }
+
+    .course-description { color: var(--gray-text); font-size: 0.9rem; line-height: 1.5; }
+
+    /* Metadata Rows (Instructor/Time) */
+    .meta-data { border-top: 1px dashed var(--bg-grid); padding-top: 15px; margin-top: auto; display: flex; flex-direction: column; gap: 8px; }
+    .meta-row { display: flex; align-items: center; gap: 10px; font-size: 0.8rem; color: var(--gray); }
+    .meta-value { font-weight: 600; color: var(--gray-dark); }
+
+    /* Progress Bar Inside Card */
+    .progress-section { margin-top: 15px; }
+    .progress-header { display: flex; justify-content: space-between; font-size: 0.75rem; margin-bottom: 6px; color: var(--gray); }
+    .progress-track { width: 100%; height: 6px; background: var(--bg-grid); border-radius: 3px; overflow: hidden; }
+    .progress-fill { height: 100%; background: var(--primary); width: 0%; transition: width 0.3s ease, background-color 0.3s ease; }
+
+    /* Button Area */
+    .card-actions { padding: 20px 24px; background: var(--bg-page); border-top: 1px solid var(--bg-grid); }
+    .course-btn {
+      display: block; width: 100%;
+      background: var(--primary); color: var(--white); padding: 12px;
+      text-align: center; border-radius: 4px; font-weight: 600; transition: background 0.2s;
+    }
+    .course-btn:hover { background: var(--primary-hover); }
+
+    /* Coming Soon State */
+    .coming-soon { opacity: 0.8; }
+    .coming-soon .course-btn { background: var(--gray); cursor: not-allowed; }
+    .coming-soon:hover { box-shadow: 4px 4px 0px 0px rgba(0,0,0,0.1); border-color: var(--bg-grid); transform: none; }
+
+    /* SLIDER CONTROLS (OUTSIDE CARD) */
+    .card-controls {
+      background: var(--white);
+      border: 1px solid var(--bg-grid);
+      padding: 10px 15px;
+      border-radius: 4px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      box-shadow: 2px 2px 0px 0px rgba(0,0,0,0.05);
+    }
+    .control-header { display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--gray); font-weight: 600; text-transform: uppercase; }
+
+    /* =======================
+       FOOTER STYLES (RESTORED)
+       ======================= */
+    .main-footer {
+      margin-top: auto;
+      background-color: var(--white);
+      color: var(--gray-text);
+      position: relative;
+      z-index: 20;
+      border-top: 1px solid var(--bg-grid);
+      
+      background-image: 
+        linear-gradient(to right, rgba(30, 60, 217, 0.03) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(30, 60, 217, 0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      padding: 60px 20px;
+    }
+
+    .footer-content {
+      max-width: 1000px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 40px;
+    }
+
+    /* CTA Card */
+    .footer-cta {
+      background-color: var(--white);
+      color: var(--gray-dark);
+      border: 2px solid var(--bg-grid);
+      border-radius: 6px;
+      padding: 20px;
+      box-shadow: 6px 6px 0px 0px rgba(0,0,0,0.05);
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      transition: transform 0.2s;
+    }
+    .footer-cta:hover { transform: translateY(-2px); box-shadow: 8px 8px 0px 0px rgba(0,0,0,0.1); border-color: var(--primary); }
+    
+    .cta-text h2 { font-size: 1.8rem; color: var(--primary-dark); font-weight: 600; margin-bottom: 10px; line-height: 1.2; }
+    .cta-text p { font-size: 1rem; color: var(--gray-text); line-height: 1.5; }
+
+    .cta-btn {
+      background-color: var(--primary-dark);
+      color: var(--white);
+      padding: 15px 30px;
+      border: 2px solid var(--primary-dark);
+      border-radius: 4px;
+      font-weight: 600;
+      text-transform: uppercase;
+      display: inline-block;
+      text-align: center;
+      box-shadow: 4px 4px 0px 0px rgba(0,0,0,0.2);
+      transition: all 0.2s;
+    }
+    .cta-btn:hover { background-color: var(--primary-hover); border-color: var(--primary-hover); box-shadow: 6px 6px 0px 0px rgba(0,0,0,0.2); transform: translate(-2px, -2px); }
+    .cta-btn:active { transform: translate(0, 0); box-shadow: 2px 2px 0px 0px rgba(0,0,0,0.2); }
+
+    /* Footer Navigation (Badges) */
+    .footer-badges { 
+      display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px;
+    }
+    .footer-badge {
+      background: var(--white); 
+      color: var(--gray-dark);
+      border: 1px solid var(--bg-grid);
+      padding: 6px 12px; border-radius: 4px; font-size: 0.8rem;
+      transition: 0.2s; display: flex; align-items: center; gap: 6px;
+    }
+    .footer-badge:hover { border-color: var(--primary); color: var(--primary); transform: translateY(-1px); }
+
+    /* Bottom Info Section */
+    .footer-bottom {
+      display: flex;
+      flex-direction: column;
+      gap: 30px;
+      padding-top: 30px;
+      border-top: 1px dashed var(--bg-grid);
+    }
+
+    .footer-brand h3 { color: var(--gray-dark); font-size: 1.2rem; margin-bottom: 10px; font-weight: bold; }
+    .footer-brand p, .footer-brand a { color: var(--gray-text); font-size: 0.9rem; display: block; margin-bottom: 5px; }
+    .footer-brand a:hover { color: var(--primary); text-decoration: underline; }
+
+    .contact-grid { display: flex; flex-direction: column; gap: 15px; }
+
+    .contact-pill {
+      background-color: var(--white);
+      border: 2px solid var(--bg-grid);
+      padding: 12px 20px;
+      border-radius: 4px;
+      display: flex; align-items: center; gap: 12px;
+      color: var(--gray-text);
+      font-weight: 600;
+      transition: 0.2s;
+    }
+    .contact-pill:hover { border-color: var(--primary); color: var(--primary); box-shadow: 4px 4px 0 rgba(0,0,0,0.05); }
+    .contact-pill svg { stroke: currentColor; }
+
+    /* Desktop Layout Adjustments */
+    @media (min-width: 768px) {
+      .footer-cta { flex-direction: row; align-items: center; justify-content: space-between; }
+      .cta-text { flex: 1; margin-right: 40px; }
+      .footer-bottom { flex-direction: row; justify-content: space-between; align-items: flex-start; }
+      .contact-grid { width: 320px; }
+      .hero h1 { font-size: 4.5rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <canvas id="glow-canvas"></canvas>
+
+  <div class="controls">
+    <label>Learning Progress (Global)</label>
+    <span id="task-val" class="task-display">50</span>
+    <input type="range" id="task-slider" min="0" max="1000" value="50">
+  </div>
+
+  <div class="content-wrapper">
+    <header id="hero-section" class="hero">
+      <h1>Leagues of Code</h1>
+    </header>
+
+    <section class="courses-section">
+      <div class="section-header">
+        <h2>Available Courses</h2>
+      </div>
+
+      <div class="courses-grid">
+        
+        <div class="course-wrapper">
+          <div class="course-card" id="card-1">
+            <div class="card-top">
+              <div class="course-icon">🐍</div>
+              <span class="course-level lvl-beg">Beginner</span>
+            </div>
+            <div class="course-info">
+              <h3>Python 1</h3>
+              <div class="course-description">Fundamentals of Python with hands-on projects and interactive exercises.</div>
+              
+              <div class="meta-data">
+                <div class="meta-row"><span>🗓️</span> Next: <span class="meta-value">Mon, 17:00</span></div>
+                <div class="meta-row"><span>👨‍🏫</span> Instr: <span class="meta-value">Sarah J.</span></div>
+              </div>
+
+              <div class="progress-section">
+                <div class="progress-header">
+                  <span>Progress</span>
+                  <span class="pct-text">12%</span>
+                </div>
+                <div class="progress-track">
+                  <div class="progress-fill" style="width: 12%;"></div>
+                </div>
+              </div>
+            </div>
+            <div class="card-actions">
+              <a href="#" class="course-btn">Continue Learning</a>
+            </div>
+          </div>
+          
+          <div class="card-controls">
+            <div class="control-header"><label>Simulate Progress</label></div>
+            <input type="range" min="0" max="100" value="12" oninput="updateCard(1, this.value)">
+          </div>
+        </div>
+
+        <div class="course-wrapper">
+          <div class="course-card" id="card-2">
+            <div class="card-top">
+              <div class="course-icon">🚀</div>
+              <span class="course-level lvl-adv">Advanced</span>
+            </div>
+            <div class="course-info">
+              <h3>Python 2</h3>
+              <div class="course-description">OOP, web frameworks, and real-world application development.</div>
+
+              <div class="meta-data">
+                <div class="meta-row"><span>🗓️</span> Next: <span class="meta-value">Tue, 16:00</span></div>
+                <div class="meta-row"><span>👩‍💻</span> Instr: <span class="meta-value">Dr. Chen</span></div>
+              </div>
+
+              <div class="progress-section">
+                <div class="progress-header">
+                  <span>Progress</span>
+                  <span class="pct-text">45%</span>
+                </div>
+                <div class="progress-track">
+                  <div class="progress-fill" style="width: 45%;"></div>
+                </div>
+              </div>
+            </div>
+            <div class="card-actions">
+              <a href="#" class="course-btn">Continue Learning</a>
+            </div>
+          </div>
+
+          <div class="card-controls">
+            <div class="control-header"><label>Simulate Progress</label></div>
+            <input type="range" min="0" max="100" value="45" oninput="updateCard(2, this.value)">
+          </div>
+        </div>
+
+        <div class="course-wrapper">
+          <div class="course-card" id="card-3">
+            <div class="card-top">
+              <div class="course-icon">📐</div>
+              <span class="course-level lvl-fnd">Foundation</span>
+            </div>
+            <div class="course-info">
+              <h3>Math 101</h3>
+              <div class="course-description">Interactive problem-solving and visual learning tools for mathematics.</div>
+
+              <div class="meta-data">
+                <div class="meta-row"><span>🗓️</span> Next: <span class="meta-value">Wed, 18:30</span></div>
+                <div class="meta-row"><span>🧠</span> Instr: <span class="meta-value">Alex R.</span></div>
+              </div>
+
+              <div class="progress-section">
+                <div class="progress-header">
+                  <span>Progress</span>
+                  <span class="pct-text">0%</span>
+                </div>
+                <div class="progress-track">
+                  <div class="progress-fill" style="width: 0%;"></div>
+                </div>
+              </div>
+            </div>
+            <div class="card-actions">
+              <a href="#" class="course-btn">Start Learning</a>
+            </div>
+          </div>
+
+          <div class="card-controls">
+            <div class="control-header"><label>Simulate Progress</label></div>
+            <input type="range" min="0" max="100" value="0" oninput="updateCard(3, this.value)">
+          </div>
+        </div>
+
+        <div class="course-wrapper">
+          <div class="course-card coming-soon" id="card-4">
+            <div class="card-top">
+              <div class="course-icon">🧩</div>
+              <span class="course-level lvl-adv">Advanced</span>
+            </div>
+            <div class="course-info">
+              <h3>Algorithms</h3>
+              <div class="course-description">Data structures and algorithms for technical interviews.</div>
+              <div class="meta-data">
+                <div class="meta-row"><span>🔒</span> Locked</div>
+              </div>
+            </div>
+            <div class="card-actions">
+              <a href="#" class="course-btn">Coming Soon</a>
+            </div>
+          </div>
+          <div class="card-controls" style="opacity: 0.5;">
+            <div class="control-header"><label>Locked</label></div>
+            <input type="range" min="0" max="100" value="0" disabled>
+          </div>
+        </div>
+
+      </div>
+    </section>
+  </div>
+
+  <footer class="main-footer">
+    <div class="footer-content">
+      
+      <div class="footer-cta">
+        <div class="cta-text">
+          <h2>Discover personalised learning with us.</h2>
+          <p>Once a meeting is booked, our representative will reach out and offer direction for the next steps.</p>
+        </div>
+        <div>
+          <a href="https://harbour-space.typeform.com/to/gxFFkidp?typeform-source=join.leaguesofcode.com" target="_blank" class="cta-btn">Book a Free Class</a>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <div class="footer-brand">
+          <div class="footer-badges">
+            <a href="https://www.leaguesofcode.com" target="_blank" class="footer-badge"><span class="emoji">🌐</span> Company</a>
+            <a href="https://www.leaguesofcode.com/curriculum" target="_blank" class="footer-badge"><span class="emoji">🗺️</span> Curriculum</a>
+            <a href="https://www.ioai-spain.org/" target="_blank" class="footer-badge"><span class="emoji">🇪🇸</span> IOAI Spain</a>
+            <a href="https://www.ioai-spain.org/tenerife-summer-camp/" target="_blank" class="footer-badge"><span class="emoji">☀️</span> Tenerife Summer Camp</a>
+          </div>
+
+          <h3>Leagues of Code | Powered By Harbour.Space</h3>
+          <p>Carrer de Rosa Sensat, 9-11, 08005 Barcelona</p>
+          <div style="margin-top:10px;">
+            <a href="/terms">Terms & Conditions</a>
+            <a href="/privacy">Privacy Policy</a>
+          </div>
+          <p style="margin-top:15px; font-size: 0.8rem; opacity: 0.7;">© 2025 Leagues of Code. All Rights Reserved</p>
+        </div>
+
+        <div class="contact-grid">
+          <div class="contact-pill">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7"></path><rect x="2" y="4" width="20" height="16" rx="2"></rect></svg>
+            <span>hello@leaguesofcode.com</span>
+          </div>
+          <div class="contact-pill">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13.832 16.568a1 1 0 0 0 1.213-.303l.355-.465A2 2 0 0 1 17 15h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2A18 18 0 0 1 2 4a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-.8 1.6l-.468.351a1 1 0 0 0-.292 1.233 14 14 0 0 0 6.392 6.384"></path></svg>
+            <span>+34 671 498 303</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+  // CARD SLIDER LOGIC
+  function updateCard(id, val) {
+    const card = document.getElementById(`card-${id}`);
+    if(!card) return;
+
+    const fill = card.querySelector('.progress-fill');
+    const text = card.querySelector('.pct-text');
+    const btn = card.querySelector('.course-btn');
+    
+    // Update visual width
+    fill.style.width = `${val}%`;
+    text.textContent = `${val}%`;
+    
+    // Update Button State logic
+    if (parseInt(val) === 0) {
+      btn.textContent = "Start Learning";
+      fill.style.backgroundColor = "var(--gray)"; 
+    } else if (parseInt(val) === 100) {
+      btn.textContent = "Review Course";
+      fill.style.backgroundColor = "var(--green)";
+    } else {
+      btn.textContent = "Continue Learning";
+      fill.style.backgroundColor = "var(--primary)";
+    }
+  }
+
+  // BACKGROUND NETWORK LOGIC
+  const KnowledgeNet = (function() {
+    let canvas, ctx, width, height, heroHeight;
+    let linkCanvas = document.createElement('canvas');
+    let linkCtx = linkCanvas.getContext('2d');
+    let nodes = [];
+    let solvedTasks = 50;
+    let lastRenderedTasks = -1; 
+
+    const MAX_NODES = 300;
+    
+    // Brand Colors (RGB)
+    const baseColors = [
+      [248, 205, 70],  // Yellow
+      [56, 201, 255],  // SkyBlue
+      [35, 193, 117]   // Green
+    ]; 
+    const peakColors = [
+      [235, 72, 105],  // Red
+      [30, 60, 217],   // Primary
+      [207, 117, 255]  // Purple
+    ];
+
+    function lerpColor(color1, color2, factor) {
+      const result = color1.map((c, i) => Math.round(c + factor * (color2[i] - color1[i])));
+      return `rgba(${result[0]}, ${result[1]}, ${result[2]},`;
+    }
+
+    class Node {
+      constructor(i) {
+        const spacing = 22; 
+        const angle = i * 137.5 * (Math.PI / 180);
+        const radius = spacing * Math.sqrt(i);
+        this.x = Math.cos(angle) * radius;
+        this.y = Math.sin(angle) * radius;
+        this.baseSize = 2 + Math.random() * 2;
+        this.pulseOffset = Math.random() * Math.PI * 2;
+        this.pulseSpeed = 0.03 + Math.random() * 0.04;
+        this.colorIdx = i % baseColors.length;
+      }
+      getDrawData(t, powerFactor) {
+        const shimmer = Math.sin(t * this.pulseSpeed + this.pulseOffset);
+        const pSize = this.baseSize + (shimmer * 1.5) + (powerFactor * 14);
+        const color = lerpColor(baseColors[this.colorIdx], peakColors[this.colorIdx], powerFactor);
+        const alpha = 0.5 + (powerFactor * 0.4) + (shimmer * 0.1);
+        return { x: this.x, y: this.y, size: pSize, color, alpha };
+      }
+    }
+
+    function updateLinkCache(cx, cy) {
+      linkCtx.clearRect(0, 0, width, height);
+      const activeCount = Math.min(solvedTasks, MAX_NODES);
+      const powerFactor = Math.max(0, (solvedTasks - 300) / 700);
+      const linkAlpha = 0.2 + (powerFactor * 0.2);
+
+      for (let i = 0; i < activeCount; i++) {
+          for (let j = i + 1; j < 2 * activeCount / 3; j++) {
+            const n1 = nodes[i];
+            const n2 = nodes[j];
+            const dist = Math.hypot(n1.x - n2.x, n1.y - n2.y);
+            if (dist < 100) {
+              const strength = (1 - (dist / 300)) ** 3 * 1.5;
+              linkCtx.strokeStyle = `rgba(89, 90, 108, ${linkAlpha * strength})`; 
+              linkCtx.lineWidth = strength * 2;
+              linkCtx.beginPath();
+              linkCtx.moveTo(cx + n1.x, cy + n1.y);
+              linkCtx.lineTo(cx + n2.x, cy + n2.y);
+              linkCtx.stroke();
+            }
+          }
+      }
+    }
+
+    function init() {
+      canvas = document.getElementById('glow-canvas');
+      ctx = canvas.getContext('2d');
+      window.addEventListener('resize', resize);
+      resize();
+
+      for (let i = 0; i < MAX_NODES; i++) nodes.push(new Node(i));
+
+      document.getElementById('task-slider').addEventListener('input', (e) => {
+        solvedTasks = parseInt(e.target.value);
+        document.getElementById('task-val').textContent = solvedTasks;
+      });
+
+      function animate(t) {
+        ctx.clearRect(0, 0, width, height); 
+
+        const cx = width / 2;
+        const cy = heroHeight / 2;
+        
+        if (solvedTasks !== lastRenderedTasks) {
+            updateLinkCache(cx, cy);
+            lastRenderedTasks = solvedTasks;
+        }
+
+        ctx.drawImage(linkCanvas, 0, 0);
+        const activeCount = Math.min(solvedTasks, MAX_NODES);
+        const powerFactor = Math.max(0, (solvedTasks - 300) / 700);
+
+        for (let i = 0; i < activeCount; i++) {
+          const d = nodes[i].getDrawData(t * 0.1, powerFactor);
+          ctx.beginPath();
+          ctx.arc(cx + d.x, cy + d.y, d.size, 0, Math.PI * 2);
+          ctx.fillStyle = d.color + d.alpha + ')';
+          ctx.fill();
+        }
+        requestAnimationFrame(animate);
+      }
+      requestAnimationFrame(animate);
+    }
+
+    function resize() {
+      width = canvas.width = document.documentElement.clientWidth;
+      height = canvas.height = Math.max(document.body.scrollHeight, document.documentElement.offsetHeight);
+      const hero = document.getElementById('hero-section');
+      heroHeight = hero ? hero.offsetHeight : window.innerHeight * 0.9;
+      linkCanvas.width = width;
+      linkCanvas.height = height;
+      lastRenderedTasks = -1; 
+    }
+    
+    setTimeout(resize, 100);
+    init();
+  })();
+  </script>
+</body>
+</html>
