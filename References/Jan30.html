@@ -3,39 +3,34 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Leagues of Code | Brand Theme</title>
+  <title>Leagues of Code | Solarized Light</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&display=swap');
 
     :root {
-      /* Brand Palette from constants.ts */
-      --primary:       #1E3CD9;
-      --primary-dark:  #1836CF;
-      --primary-hover: #2644E0;
-      
-      --blue:          #3959ff;
-      --sky-blue:      #38c9ff;
-      --yellow:        #f8cd46;
-      --red:           #eb4869;
-      --purple:        #cf75ff;
-      --green:         #23c175;
-
-      --white:         #ffffff;
-      --black:         #000000;
-      
-      --gray-dark:     #232339;
-      --gray:          #595a6c;
-      --gray-text:     #626262;
-      
-      --bg-page:       #FAFAFA;
-      --bg-grid:       #F4F4F4;
+      --base03:    #002b36;
+      --base02:    #073642;
+      --base01:    #586e75;
+      --base00:    #657b83;
+      --base0:     #839496;
+      --base1:     #93a1a1;
+      --base2:     #eee8d5; /* Footer Background */
+      --base3:     #fdf6e3; /* Main Background */
+      --yellow:    #b58900;
+      --orange:    #cb4b16;
+      --red:       #dc322f;
+      --magenta:   #d33682;
+      --violet:    #6c71c4;
+      --blue:      #268bd2;
+      --cyan:      #2aa198;
+      --green:     #859900;
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body { 
-      background-color: var(--bg-page); 
-      color: var(--gray-text); 
+      background-color: var(--base3); 
+      color: var(--base00); 
       font-family: 'Fira Code', monospace; 
       overflow-x: hidden;
       display: flex;
@@ -43,101 +38,88 @@
       min-height: 100vh;
     }
 
-    /* Grid Background Effect on Body */
-    body::before {
-      content: "";
-      position: absolute;
-      top: 0; left: 0; width: 100%; height: 100%;
-      background-image: 
-        linear-gradient(to right, var(--bg-grid) 1px, transparent 1px),
-        linear-gradient(to bottom, var(--bg-grid) 1px, transparent 1px);
-      background-size: 60px 60px;
-      z-index: -1;
-      pointer-events: none;
-    }
-
-    #glow-canvas { opacity: 0.6; mix-blend-mode: multiply; position:absolute; top:0; left:0; width:100%; pointer-events: none;}
+    #glow-canvas { opacity: 0.8; mix-blend-mode: multiply; position:absolute; top:0; left:0; width:100%; pointer-events: none;}
 
     a { text-decoration: none; }
 
     /* CONTROLS */
     .controls {
       position: fixed; top: 20px; right: 20px; z-index: 100;
-      background: var(--white); padding: 20px;
-      border: 2px solid var(--bg-grid); border-radius: 4px; width: 250px;
-      box-shadow: 4px 4px 0px 0px rgba(0,0,0,0.05);
+      background: var(--base2); padding: 20px;
+      border: 1px solid var(--base1); border-radius: 4px; width: 250px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
     }
-    .controls label { font-size: 0.8rem; color: var(--gray); display: block; margin-bottom: 5px;}
-    .task-display { font-size: 1.2rem; color: var(--primary); font-weight: bold; }
-    input[type=range] { width: 100%; accent-color: var(--primary); }
+    .controls label { font-size: 0.8rem; color: var(--base01); display: block; margin-bottom: 5px;}
+    .task-display { font-size: 1.2rem; color: var(--blue); font-weight: bold; }
+    input[type=range] { width: 100%; accent-color: var(--cyan); }
 
     /* HERO */
     .hero { height: 80vh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; position: relative; z-index: 10; padding: 20px;}
     
-    .hero h1 { 
-      color: var(--primary); 
-      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      font-size: 3.5rem; font-weight: 600; line-height: 1.2; margin-bottom: 20px;
-    }
+    .hero h1 { color: var(--base01); font-size: 3.5rem; font-weight: 600; line-height: 1.2; margin-bottom: 20px;}
+    .hero h1::before { content: "# "; color: var(--yellow); }
+    
+    .hero p { color: var(--base1); font-size: 1.1rem; margin-top: 10px; transition: opacity 0.4s; }
+    .hero p::before { content: "/* "; color: var(--green); }
+    .hero p::after { content: " */"; color: var(--green); }
 
     /* COURSES */
     .courses-section { max-width: 1400px; margin: 0 auto; padding: 40px; position: relative; z-index: 10; padding-bottom: 80px; }
-    .section-header h2 { color: var(--gray-dark); margin-bottom: 30px; border-bottom: 2px solid var(--bg-grid); padding-bottom: 10px; display: inline-block; font-size: 1.5rem; }
+    .section-header h2 { color: var(--base01); margin-bottom: 30px; border-bottom: 2px solid var(--base2); padding-bottom: 10px; display: inline-block; font-size: 1.5rem; }
 
     .courses-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; }
 
     .course-card {
-      background: var(--white);
-      /* Hard shadow style based on constants.ts comments hint */
-      box-shadow: 4px 4px 0px 0px rgba(0,0,0,0.1); 
-      border: 1px solid var(--bg-grid);
+      background: var(--base2);
+      box-shadow: 4px 4px 0px rgba(0,0,0,0.05);
+      border: 1px solid rgba(0,0,0,0.05);
       padding: 24px;
       border-radius: 6px;
       display: flex; flex-direction: column;
-      transition: all 0.2s ease;
+      transition: transform 0.2s;
     }
-    .course-card:hover { 
-      transform: translateY(-4px); 
-      box-shadow: 6px 6px 0px 0px var(--primary); 
-      border-color: var(--primary); 
-    }
+    .course-card:hover { transform: translateY(-4px); box-shadow: 6px 6px 0px rgba(0,0,0,0.08); border-color: var(--cyan); }
 
     .card-header { display: flex; align-items: center; gap: 15px; margin-bottom: 15px; }
     .course-icon { font-size: 1.8rem; }
-    .course-info h3 { color: var(--gray-dark); font-size: 1.2rem; margin-bottom: 4px; font-weight: 600; }
-    .course-level { color: var(--purple); font-size: 0.75rem; text-transform: uppercase; font-weight: 600;}
+    .course-info h3 { color: var(--blue); font-size: 1.2rem; margin-bottom: 4px; font-weight: 600; }
+    .course-level { color: var(--magenta); font-size: 0.75rem; text-transform: uppercase; font-weight: 600;}
 
-    .course-description { color: var(--gray-text); font-size: 0.9rem; margin-bottom: 20px; line-height: 1.5; flex-grow: 1; }
+    .course-description { color: var(--base00); font-size: 0.9rem; margin-bottom: 20px; line-height: 1.5; flex-grow: 1; }
 
-    .course-stats { display: flex; gap: 15px; font-size: 0.8rem; margin-bottom: 20px; border-top: 1px dotted var(--gray); padding-top: 15px; }
-    .stat { color: var(--gray); }
-    .stat span { color: var(--primary); font-weight: 600; }
+    .course-stats { display: flex; gap: 15px; font-size: 0.8rem; margin-bottom: 20px; border-top: 1px dotted var(--base1); padding-top: 15px; }
+    .stat { color: var(--base01); }
+    .stat span { color: var(--violet); font-weight: 600; }
+
+    .progress-container { margin-bottom: 20px; }
+    .progress-label { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 0.75rem; color: var(--base01); }
+    .progress-percentage { font-weight: 600; color: var(--cyan); font-size: 0.8rem; }
+    .progress-bar-bg { width: 100%; height: 4px; background: rgba(0,0,0,0.05); border-radius: 2px; overflow: hidden; }
+    .progress-bar-fill { height: 100%; background: var(--cyan); border-radius: 2px; transition: width 0.3s ease; }
 
     .course-btn {
-      background: var(--primary); color: var(--white); padding: 12px;
+      background: var(--cyan); color: var(--base3); padding: 12px;
       text-align: center; border-radius: 4px; font-weight: 600; transition: background 0.2s;
     }
-    .course-btn:hover { background: var(--primary-hover); }
+    .course-btn:hover { background: var(--blue); }
     .coming-soon { opacity: 0.7; }
-    .coming-soon .course-btn { background: var(--gray); cursor: not-allowed; }
+    .coming-soon .course-btn { background: var(--base1); cursor: not-allowed; }
     
     /* =======================
-       FOOTER STYLES
+       LIGHT FOOTER STYLES
        ======================= */
     .main-footer {
       margin-top: auto;
-      background-color: var(--white);
-      color: var(--gray-text);
+      background-color: var(--base2); /* Light Beige Background */
+      color: var(--base00); /* Dark Text */
       position: relative;
       z-index: 20;
-      border-top: 1px solid var(--bg-grid);
+      border-top: 1px solid rgba(0,0,0,0.05);
       
-      /* Subtle Grid pattern matching brand */
+      /* Subtle Blue Grid pattern */
       background-image: 
-        linear-gradient(to right, rgba(30, 60, 217, 0.03) 1px, transparent 1px),
-        linear-gradient(to bottom, rgba(30, 60, 217, 0.03) 1px, transparent 1px);
+        linear-gradient(to right, rgba(38, 139, 210, 0.08) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(38, 139, 210, 0.08) 1px, transparent 1px);
       background-size: 40px 40px;
       padding: 60px 20px;
     }
@@ -152,9 +134,9 @@
 
     /* CTA Card */
     .footer-cta {
-      background-color: var(--white);
-      color: var(--gray-dark);
-      border: 2px solid var(--bg-grid);
+      background-color: var(--base3); /* Lightest Card */
+      color: var(--base00);
+      border: 2px solid var(--base1);
       border-radius: 6px;
       padding: 20px;
       box-shadow: 6px 6px 0px 0px rgba(0,0,0,0.05);
@@ -163,39 +145,39 @@
       gap: 20px;
       transition: transform 0.2s;
     }
-    .footer-cta:hover { transform: translateY(-2px); box-shadow: 8px 8px 0px 0px rgba(0,0,0,0.1); border-color: var(--primary); }
+    .footer-cta:hover { transform: translateY(-2px); box-shadow: 8px 8px 0px 0px rgba(0,0,0,0.1); border-color: var(--blue); }
     
-    .cta-text h2 { font-size: 1.8rem; color: var(--primary-dark); font-weight: 600; margin-bottom: 10px; line-height: 1.2; }
-    .cta-text p { font-size: 1rem; color: var(--gray-text); line-height: 1.5; }
+    .cta-text h2 { font-size: 1.8rem; color: var(--blue); font-weight: 600; margin-bottom: 10px; line-height: 1.2; }
+    .cta-text p { font-size: 1rem; color: var(--base01); line-height: 1.5; }
 
     .cta-btn {
-      background-color: var(--primary-dark);
-      color: var(--white);
+      background-color: var(--blue);
+      color: var(--base3);
       padding: 15px 30px;
-      border: 2px solid var(--primary-dark);
+      border: 2px solid var(--blue);
       border-radius: 4px;
       font-weight: 600;
       text-transform: uppercase;
       display: inline-block;
       text-align: center;
-      box-shadow: 4px 4px 0px 0px rgba(0,0,0,0.2);
+      box-shadow: 4px 4px 0px 0px var(--base1);
       transition: all 0.2s;
     }
-    .cta-btn:hover { background-color: var(--primary-hover); border-color: var(--primary-hover); box-shadow: 6px 6px 0px 0px rgba(0,0,0,0.2); transform: translate(-2px, -2px); }
-    .cta-btn:active { transform: translate(0, 0); box-shadow: 2px 2px 0px 0px rgba(0,0,0,0.2); }
+    .cta-btn:hover { background-color: var(--cyan); border-color: var(--cyan); box-shadow: 6px 6px 0px 0px var(--base1); transform: translate(-2px, -2px); }
+    .cta-btn:active { transform: translate(0, 0); box-shadow: 2px 2px 0px 0px var(--base1); }
 
     /* Footer Navigation (Badges) */
     .footer-badges { 
       display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px;
     }
     .footer-badge {
-      background: var(--white); 
-      color: var(--gray-dark);
-      border: 1px solid var(--bg-grid);
+      background: var(--base3); 
+      color: var(--base00);
+      border: 1px solid var(--base1);
       padding: 6px 12px; border-radius: 4px; font-size: 0.8rem;
       transition: 0.2s; display: flex; align-items: center; gap: 6px;
     }
-    .footer-badge:hover { border-color: var(--primary); color: var(--primary); transform: translateY(-1px); }
+    .footer-badge:hover { border-color: var(--blue); color: var(--blue); transform: translateY(-1px); }
 
     /* Bottom Info Section */
     .footer-bottom {
@@ -203,27 +185,27 @@
       flex-direction: column;
       gap: 30px;
       padding-top: 30px;
-      border-top: 1px dashed var(--bg-grid);
+      border-top: 1px dashed var(--base1);
     }
 
-    .footer-brand h3 { color: var(--gray-dark); font-size: 1.2rem; margin-bottom: 10px; font-weight: bold; }
-    .footer-brand p, .footer-brand a { color: var(--gray-text); font-size: 0.9rem; display: block; margin-bottom: 5px; }
-    .footer-brand a:hover { color: var(--primary); text-decoration: underline; }
+    .footer-brand h3 { color: var(--base01); font-size: 1.2rem; margin-bottom: 10px; font-weight: bold; }
+    .footer-brand p, .footer-brand a { color: var(--base00); font-size: 0.9rem; display: block; margin-bottom: 5px; }
+    .footer-brand a:hover { color: var(--blue); text-decoration: underline; }
 
     .contact-grid { display: flex; flex-direction: column; gap: 15px; }
 
     .contact-pill {
-      background-color: var(--white);
-      border: 2px solid var(--bg-grid);
+      background-color: var(--base3);
+      border: 2px solid var(--base1);
       padding: 12px 20px;
       border-radius: 4px;
       display: flex; align-items: center; gap: 12px;
-      color: var(--gray-text);
+      color: var(--base01);
       font-weight: 600;
       transition: 0.2s;
     }
-    .contact-pill:hover { border-color: var(--primary); color: var(--primary); box-shadow: 4px 4px 0 rgba(0,0,0,0.05); }
-    .contact-pill svg { stroke: currentColor; }
+    .contact-pill:hover { border-color: var(--blue); color: var(--blue); box-shadow: 2px 2px 0 rgba(0,0,0,0.05); }
+    .contact-pill svg { stroke: var(--base00); }
 
     /* Desktop Layout Adjustments */
     @media (min-width: 768px) {
@@ -242,7 +224,7 @@
   <div class="controls">
     <label>Learning Progress</label>
     <span id="task-val" class="task-display">50</span>
-    <input type="range" id="task-slider" min="0" max="1000" value="50">
+    <input type="range" id="task-slider" min="0" max="600" value="50">
   </div>
 
   <div class="content-wrapper">
@@ -269,6 +251,15 @@
             <div class="stat"><span>12</span> Units</div>
             <div class="stat"><span>4h</span> Time</div>
           </div>
+          <div class="progress-container">
+            <div class="progress-label">
+              <span>Progress</span>
+              <span class="progress-percentage">67%</span>
+            </div>
+            <div class="progress-bar-bg">
+              <div class="progress-bar-fill" style="width: 67%;"></div>
+            </div>
+          </div>
           <a href="#" class="course-btn">Start Learning</a>
         </div>
 
@@ -285,6 +276,15 @@
             <div class="stat"><span>18</span> Units</div>
             <div class="stat"><span>6h</span> Time</div>
           </div>
+          <div class="progress-container">
+            <div class="progress-label">
+              <span>Progress</span>
+              <span class="progress-percentage">34%</span>
+            </div>
+            <div class="progress-bar-bg">
+              <div class="progress-bar-fill" style="width: 34%;"></div>
+            </div>
+          </div>
           <a href="#" class="course-btn">Start Learning</a>
         </div>
 
@@ -300,6 +300,15 @@
           <div class="course-stats">
             <div class="stat"><span>15</span> Units</div>
             <div class="stat"><span>5h</span> Time</div>
+          </div>
+          <div class="progress-container">
+            <div class="progress-label">
+              <span>Progress</span>
+              <span class="progress-percentage">89%</span>
+            </div>
+            <div class="progress-bar-bg">
+              <div class="progress-bar-fill" style="width: 89%;"></div>
+            </div>
           </div>
           <a href="#" class="course-btn">Start Learning</a>
         </div>
@@ -374,21 +383,9 @@
     let lastRenderedTasks = -1; 
 
     const MAX_NODES = 300;
-    
-    // UPDATED: BRAND COLORS (RGB format)
-    // Base: Yellow, SkyBlue, Green
-    const baseColors = [
-      [248, 205, 70],  // #f8cd46 (Yellow)
-      [56, 201, 255],  // #38c9ff (SkyBlue)
-      [35, 193, 117]   // #23c175 (Green)
-    ]; 
-    
-    // Peak: Red, Primary Blue, Purple
-    const peakColors = [
-      [235, 72, 105],  // #eb4869 (Red)
-      [30, 60, 217],   // #1E3CD9 (Primary)
-      [207, 117, 255]  // #cf75ff (Purple)
-    ];
+    // Solarized Palette colors for nodes
+    const baseColors = [[181, 137, 0], [203, 75, 22], [42, 161, 152]]; // Yellow, Orange, Cyan
+    const peakColors = [[220, 50, 47], [211, 54, 130], [38, 139, 210]]; // Red, Magenta, Blue
 
     function lerpColor(color1, color2, factor) {
       const result = color1.map((c, i) => Math.round(c + factor * (color2[i] - color1[i])));
@@ -397,7 +394,7 @@
 
     class Node {
       constructor(i) {
-        const spacing = 22; 
+        const spacing = 19; 
         const angle = i * 137.5 * (Math.PI / 180);
         const radius = spacing * Math.sqrt(i);
         this.x = Math.cos(angle) * radius;
@@ -409,7 +406,7 @@
       }
       getDrawData(t, powerFactor) {
         const shimmer = Math.sin(t * this.pulseSpeed + this.pulseOffset);
-        const pSize = (this.baseSize + (shimmer * 1.5) + (powerFactor * 14)) / (window.innerWidth < 600 ? 2 : 1);
+        const pSize = this.baseSize + (shimmer * 1.5) + (powerFactor * 14);
         const color = lerpColor(baseColors[this.colorIdx], peakColors[this.colorIdx], powerFactor);
         const alpha = 0.5 + (powerFactor * 0.4) + (shimmer * 0.1);
         return { x: this.x, y: this.y, size: pSize, color, alpha };
@@ -429,8 +426,7 @@
             const dist = Math.hypot(n1.x - n2.x, n1.y - n2.y);
             if (dist < 100) {
               const strength = (1 - (dist / 300)) ** 3 * 1.5;
-              // Using Brand Gray for links
-              linkCtx.strokeStyle = `rgba(89, 90, 108, ${linkAlpha * strength})`; 
+              linkCtx.strokeStyle = `rgba(147, 161, 161, ${linkAlpha * strength})`; // Base1 color
               linkCtx.lineWidth = strength * 2;
               linkCtx.beginPath();
               linkCtx.moveTo(cx + n1.x, cy + n1.y);
@@ -452,10 +448,12 @@
       document.getElementById('task-slider').addEventListener('input', (e) => {
         solvedTasks = parseInt(e.target.value);
         document.getElementById('task-val').textContent = solvedTasks;
+        // const sub = document.getElementById('hero-subtitle');
+        // if(solvedTasks > 65) sub.style.opacity = '0'; else sub.style.opacity = '1';
       });
 
       function animate(t) {
-        ctx.clearRect(0, 0, width, height); 
+        ctx.clearRect(0, 0, width, height); // CLEARS CANVAS FOR LIGHT MODE
 
         const cx = width / 2;
         const cy = heroHeight / 2;
