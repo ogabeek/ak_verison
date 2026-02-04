@@ -365,6 +365,7 @@
   <script>
   // Course IDs to fetch
   const COURSE_IDS = [297, 308, 220];
+  const blinking_speed = 0.666;
 
   // Fetch real progress from Moodle API
   async function fetchProgress() {
@@ -476,7 +477,7 @@
         this.y = Math.sin(angle) * radius;
         this.baseSize = 2 + Math.random() * 2;
         this.pulseOffset = Math.random() * Math.PI * 2;
-        this.pulseSpeed = 0.03 + Math.random() * 0.04;
+        this.pulseSpeed = (0.03 + Math.random() * 0.04)*blinking_speed;
         this.colorIdx = i % baseColors.length;
       }
       getDrawData(t, powerFactor) {
