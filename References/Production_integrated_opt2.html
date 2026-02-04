@@ -554,6 +554,16 @@
       document.getElementById('task-slider').addEventListener('input', (e) => {
         solvedTasks = parseInt(e.target.value);
         document.getElementById('task-val').textContent = solvedTasks;
+
+        // --- RESTORED LOGIC ---
+        // Hide the subtitle when the graph gets busy so text doesn't overlap nodes
+        const sub = document.getElementById('hero-subtitle');
+        if (sub) {
+            if(solvedTasks > 65) sub.style.opacity = '0'; 
+            else sub.style.opacity = '1';
+        }
+        // ----------------------
+
         updateGraphState();
       });
       
