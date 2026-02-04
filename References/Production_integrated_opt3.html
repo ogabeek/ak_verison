@@ -38,7 +38,7 @@
       min-height: 100vh;
     }
 
-    #glow-canvas { opacity: 0.5; mix-blend-mode: multiply; position:absolute; top:0; left:0; width:100%; pointer-events: none;}
+    #glow-canvas { opacity: 0.8; mix-blend-mode: multiply; position:absolute; top:0; left:0; width:100%; pointer-events: none;}
 
     a { text-decoration: none; }
 
@@ -171,7 +171,9 @@
       display: flex; flex-direction: row; gap: 10px; flex-wrap: wrap; margin-bottom: 10px;
     }
     .footer-badge {
+      background: var(--base3); 
       color: var(--base00);
+      border: 1px solid var(--base1);
       padding: 6px 12px; border-radius: 4px; font-size: 0.8rem;
       transition: 0.2s; display: flex; align-items: center; gap: 6px;
     }
@@ -336,14 +338,8 @@
             <a href="https://www.ioai-spain.org/" target="_blank" class="footer-badge"><span class="emoji">🇪🇸</span> IOAI Spain</a>
             <a href="https://www.ioai-spain.org/tenerife-summer-camp/" target="_blank" class="footer-badge"><span class="emoji">☀️</span> Tenerife Summer Camp</a>
           </div>
-          <div style="display: flex; gap: 4px;">
-            <svg width="28.9" height="20.0" viewBox="0 0 289 200" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M285.468 92.0105L239.253 45.7961L196.594 3.13672C192.412 -1.04557 185.615 -1.04557 181.433 3.13672L84.9268 99.6432L114.726 129.442L144.315 99.6432L188.857 55.1017L209.873 76.1178L233.398 99.6432L188.857 144.185L174.01 129.337L144.315 159.136L181.329 196.15C185.511 200.332 192.307 200.332 196.489 196.15L238.208 154.431L285.363 107.276C289.65 103.094 289.65 96.1928 285.468 92.0105Z" fill="#3844FF"/>
-              <path d="M174.114 69.8443L203.913 99.6432L129.677 173.879L107.407 196.15C103.224 200.332 96.428 200.332 92.2457 196.15L3.37198 107.276C2.53552 106.439 1.80362 105.394 1.28083 104.348C-0.914872 100.271 -0.287541 95.1472 3.16285 91.6968L24.9108 70.4717L92.1412 3.13672C96.3234 -1.04557 103.12 -1.04557 107.302 3.13672L144.315 40.15L114.516 69.9489L99.6693 55.1017L55.4415 99.434L99.9829 144.08L121.208 122.855L174.114 69.8443Z" fill="#38C9FF"/>
-            </svg>
-            <h3>Leagues of Code | Powered By Harbour.Space</h3>
-          </div>
-          
+
+          <h3>Leagues of Code | Powered By Harbour.Space</h3>
           <p>Carrer de Rosa Sensat, 9-11, 08005 Barcelona</p>
           <div style="margin-top:10px;">
             <a href="/terms">Terms & Conditions</a>
@@ -364,12 +360,15 @@
           <div class="footer-badges" style="margin-top: 12px;">
             <a href="https://www.instagram.com/leaguesofcode" target="_blank" class="footer-badge">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+              (LoC)
             </a>
             <a href="https://www.instagram.com/harbour.space/" target="_blank" class="footer-badge">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+              (H.S)
             </a>
             <a href="https://www.linkedin.com/school/harbour-space" target="_blank" class="footer-badge">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg>
+              (H.S)
             </a>
           </div>
         </div>
@@ -465,124 +464,93 @@
   // Fetch progress on page load
   document.addEventListener('DOMContentLoaded', fetchProgress);
 
-  const KnowledgeNet = (function() {
-    let canvas, ctx, width, height, heroHeight;
-    let linkCanvas = document.createElement('canvas');
-    let linkCtx = linkCanvas.getContext('2d');
-    let nodes = [];
-    let solvedTasks = 50;
-    let lastRenderedTasks = -1; 
+  /* REPLACE THE KnowledgeNet BLOCK WITH THIS */
+const AtomicOrbit = (function() {
+  let canvas, ctx, width, height;
+  let solvedTasks = 50;
 
-    const MAX_NODES = 300;
-    // Solarized Palette colors for nodes
-    const baseColors = [[181, 137, 0], [203, 75, 22], [42, 161, 152]]; // Yellow, Orange, Cyan
-    const peakColors = [[220, 50, 47], [211, 54, 130], [38, 139, 210]]; // Red, Magenta, Blue
+  function init() {
+    canvas = document.getElementById('glow-canvas');
+    ctx = canvas.getContext('2d');
+    window.addEventListener('resize', resize);
+    resize();
 
-    function lerpColor(color1, color2, factor) {
-      const result = color1.map((c, i) => Math.round(c + factor * (color2[i] - color1[i])));
-      return `rgba(${result[0]}, ${result[1]}, ${result[2]},`;
-    }
+    document.getElementById('task-slider').addEventListener('input', (e) => {
+      solvedTasks = parseInt(e.target.value);
+      document.getElementById('task-val').textContent = solvedTasks;
+    });
 
-    class Node {
-      constructor(i) {
-        const spacing = 22; 
-        const angle = i * 137.5 * (Math.PI / 180);
-        const radius = spacing * Math.sqrt(i);
-        this.x = Math.cos(angle) * radius;
-        this.y = Math.sin(angle) * radius;
-        this.baseSize = 2 + Math.random() * 2;
-        this.pulseOffset = Math.random() * Math.PI * 2;
-        this.pulseSpeed = (0.03 + Math.random() * 0.04)*blinking_speed;
-        this.colorIdx = i % baseColors.length;
-      }
-      getDrawData(t, powerFactor) {
-        const shimmer = Math.sin(t * this.pulseSpeed + this.pulseOffset);
-        const pSize = this.baseSize + (shimmer * 1.5) + (powerFactor * 14);
-        const color = lerpColor(baseColors[this.colorIdx], peakColors[this.colorIdx], powerFactor);
-        const alpha = 0.5 + (powerFactor * 0.4) + (shimmer * 0.1);
-        return { x: this.x, y: this.y, size: pSize, color, alpha };
-      }
-    }
+    animate();
+  }
 
-    function updateLinkCache(cx, cy) {
-      linkCtx.clearRect(0, 0, width, height);
-      const activeCount = Math.min(solvedTasks, MAX_NODES);
-      const powerFactor = Math.max(0, (solvedTasks - 300) / 700);
-      const linkAlpha = 0.2 + (powerFactor * 0.2);
+  function animate(t) {
+    const time = t * 0.001;
+    ctx.clearRect(0, 0, width, height);
 
-      for (let i = 0; i < activeCount; i++) {
-          for (let j = i + 1; j < 2 * activeCount / 3; j++) {
-            const n1 = nodes[i];
-            const n2 = nodes[j];
-            const dist = Math.hypot(n1.x - n2.x, n1.y - n2.y);
-            if (dist < 100) {
-              const strength = (1 - (dist / 300)) ** 3 * 1.5;
-              linkCtx.strokeStyle = `rgba(147, 161, 161, ${linkAlpha * strength})`; // Base1 color
-              linkCtx.lineWidth = strength * 2;
-              linkCtx.beginPath();
-              linkCtx.moveTo(cx + n1.x, cy + n1.y);
-              linkCtx.lineTo(cx + n2.x, cy + n2.y);
-              linkCtx.stroke();
-            }
-          }
-      }
-    }
+    const cx = width / 2;
+    const cy = height * 0.4; // Center in hero
+    
+    // Number of orbits based on progress (from 3 to 20)
+    const numOrbits = 3 + Math.floor(solvedTasks / 50);
+    const maxRadius = 300;
 
-    function init() {
-      canvas = document.getElementById('glow-canvas');
-      ctx = canvas.getContext('2d');
-      window.addEventListener('resize', resize);
-      resize();
+    for (let i = 0; i < numOrbits; i++) {
+      ctx.beginPath();
+      
+      // Math: Varying radius and speed based on index
+      const r = 50 + (i * (maxRadius/numOrbits));
+      
+      // Rotate the entire orbit ellipse
+      const rotation = (i * Math.PI) / (numOrbits/2);
+      
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(rotation);
+      
+      // Draw Elliptical Orbit Path
+      ctx.strokeStyle = "rgba(147, 161, 161, 0.3)"; // base1 faint
+      ctx.ellipse(0, 0, r, r * 0.4, 0, 0, Math.PI * 2);
+      ctx.stroke();
 
-      for (let i = 0; i < MAX_NODES; i++) nodes.push(new Node(i));
-
-      document.getElementById('task-slider').addEventListener('input', (e) => {
-        solvedTasks = parseInt(e.target.value);
-        document.getElementById('task-val').textContent = solvedTasks;
-        const sub = document.getElementById('hero-subtitle');
-        if(solvedTasks > 65) sub.style.opacity = '0'; else sub.style.opacity = '1';
-      });
-
-      function animate(t) {
-        ctx.clearRect(0, 0, width, height); // CLEARS CANVAS FOR LIGHT MODE
-
-        const cx = width / 2;
-        const cy = heroHeight / 2;
-        
-        if (solvedTasks !== lastRenderedTasks) {
-            updateLinkCache(cx, cy);
-            lastRenderedTasks = solvedTasks;
-        }
-
-        ctx.drawImage(linkCanvas, 0, 0);
-        const activeCount = Math.min(solvedTasks, MAX_NODES);
-        const powerFactor = Math.max(0, (solvedTasks - 300) / 700);
-
-        for (let i = 0; i < activeCount; i++) {
-          const d = nodes[i].getDrawData(t * 0.1, powerFactor);
+      // Draw Electron
+      // Speed increases with progress
+      const speed = time * (1 + (i % 3)) + (solvedTasks * 0.001);
+      const ex = Math.cos(speed) * r;
+      const ey = Math.sin(speed) * (r * 0.4);
+      
+      ctx.fillStyle = i % 2 === 0 ? "#268bd2" : "#d33682"; // Blue / Magenta
+      ctx.beginPath();
+      ctx.arc(ex, ey, 4, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Draw connection to center (creates web effect)
+      if (solvedTasks > 200) {
           ctx.beginPath();
-          ctx.arc(cx + d.x, cy + d.y, d.size, 0, Math.PI * 2);
-          ctx.fillStyle = d.color + d.alpha + ')';
-          ctx.fill();
-        }
-        requestAnimationFrame(animate);
+          ctx.moveTo(0,0);
+          ctx.lineTo(ex, ey);
+          ctx.strokeStyle = `rgba(42, 161, 152, 0.1)`; // Cyan faint
+          ctx.stroke();
       }
-      requestAnimationFrame(animate);
-    }
 
-    function resize() {
-      width = canvas.width = document.documentElement.clientWidth;
-      height = canvas.height = Math.max(document.body.scrollHeight, document.documentElement.offsetHeight);
-      const hero = document.getElementById('hero-section');
-      heroHeight = hero ? hero.offsetHeight : window.innerHeight * 0.9;
-      linkCanvas.width = width;
-      linkCanvas.height = height;
-      lastRenderedTasks = -1; 
+      ctx.restore();
     }
     
-    setTimeout(resize, 100);
-    init();
-  })();
+    // Core Nucleus
+    ctx.fillStyle = "black";
+    ctx.beginPath();
+    ctx.arc(cx, cy, (10 + (Math.sin(time*2)*2))*0.5, 0, Math.PI*2); // Pulsing
+    ctx.fill();
+
+    requestAnimationFrame(animate);
+  }
+
+  function resize() {
+    width = canvas.width = document.documentElement.clientWidth;
+    height = canvas.height = document.documentElement.clientHeight;
+  }
+
+  init();
+})();
   </script>
 </body>
 </html>
