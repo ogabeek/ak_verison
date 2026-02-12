@@ -180,6 +180,9 @@ class ParticleSystem {
     this.mouseClick = false;
     this.scale = 1;
     this.lastProgress = '';
+    this.initialized = false;
+    this.lastCenterX = 0;
+    this.lastCenterY = 0;
     
     this.init();
   }
@@ -221,18 +224,57 @@ class ParticleSystem {
     const hero = this.canvas.parentElement;
     if (!hero) return;
     
+    const oldCenterX = this.canvas.width / 2;
+    const oldCenterY = this.canvas.height / 2;
+    
     const width = hero.clientWidth;
     const height = hero.clientHeight;
     
     this.canvas.width = width;
     this.canvas.height = height;
     
-    this.createParticles(width, height);
+    if (!this.initialized) {
+      this.createParticles(width, height);
+      this.initialized = true;
+      this.lastCenterX = width / 2;
+      this.lastCenterY = height / 2;
+    } else {
+      this.updateScale(oldCenterX, oldCenterY);
+      this.lastCenterX = width / 2;
+      this.lastCenterY = height / 2;
+    }
   }
 
   scaleCoefficient(nodesCount) {
     if (nodesCount === 0) return 1.0;
     return Math.min(1, 12 / Math.sqrt(nodesCount));
+  }
+
+  updateScale(oldCenterX, oldCenterY) {
+    const nonEmptyCourses = Object.entries(courseProgress)
+      .filter(([_, progress]) => progress > 0);
+
+    let nodesCount = nonEmptyCourses.reduce((sum, [_, progress]) => sum + progress, 0);
+    const fakeNodesCount = Math.max(0, 50 - nodesCount);
+    nodesCount += fakeNodesCount;
+    
+    const newScale = this.scaleCoefficient(nodesCount);
+    const scaleRatio = newScale / this.scale;
+    this.scale = newScale;
+
+    const newCenterX = this.canvas.width / 2;
+    const newCenterY = this.canvas.height / 2;
+
+    this.particles.forEach(particle => {
+      particle.baseSize *= scaleRatio;
+      particle.size = particle.baseSize;
+      
+      const offsetX = particle.x - oldCenterX;
+      const offsetY = particle.y - oldCenterY;
+      
+      particle.x = newCenterX + offsetX;
+      particle.y = newCenterY + offsetY;
+    });
   }
 
   createParticles(width, height) {
@@ -247,7 +289,7 @@ class ParticleSystem {
     let nodesCount = nonEmptyCourses.reduce((sum, [_, progress]) => sum + progress, 0);
 
     // Add decorative particles only if we have very few real particles
-    const fakeNodesCount = nodesCount < 20 ? Math.max(0, 50 - nodesCount) : 0;
+    const fakeNodesCount = Math.max(0, 50 - nodesCount);
     nodesCount += fakeNodesCount;
     this.scale = this.scaleCoefficient(nodesCount);
 
@@ -285,8 +327,8 @@ class ParticleSystem {
       const colorPrefix = "rgba(230,230,230,";
       const angle = Math.random() * Math.PI * 2;
       const distance = Math.random() * 100;
-      const x = centerX / 2 + Math.cos(angle) * distance;
-      const y = centerY / 2 + Math.sin(angle) * distance;
+      const x = centerX + Math.cos(angle) * distance;
+      const y = centerY + Math.sin(angle) * distance;
       const particle = new Particle(x, y, NODE_SIZE * this.scale, colorPrefix, 1, -1, -1 - Math.floor(Math.random() * 3));
       particles.push(particle);
     }
@@ -427,7 +469,10 @@ class ParticleSystem {
     const width = this.canvas.width;
     const height = this.canvas.height;
     
-    if (width > 0 && height > 0) {
+    if (width > 0 && height > 0 && !this.initialized) {
+      this.createParticles(width, height);
+      this.initialized = true;
+    } else if (this.initialized) {
       this.createParticles(width, height);
     }
   }
