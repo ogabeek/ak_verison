@@ -43,9 +43,8 @@ const courseMoodleMap = {
   'math-ml': null, // Coming soon
 };
 
-const courses = [
-  {
-    id: 'python1',
+const courses = {
+  python1: {
     moodleId: 297,
     name: 'Python 1',
     level: 'Beginner',
@@ -54,8 +53,7 @@ const courses = [
     color: 'blue',
     stats: { lessons: 260, duration: '4h' }, // 260 exercises across 28 quizzes
   },
-  {
-    id: 'python2',
+  python2: {
     moodleId: 308,
     name: 'Python 2',
     level: 'Advanced',
@@ -64,8 +62,7 @@ const courses = [
     color: 'green',
     stats: { lessons: 196, duration: '6h' }, // 196 exercises across 25 quizzes
   },
-  {
-    id: 'math101',
+  math101: {
     moodleId: 220,
     name: 'Math 101',
     level: 'Foundation',
@@ -74,8 +71,7 @@ const courses = [
     color: 'orange',
     stats: { lessons: 377, duration: '5h' }, // 377 exercises across 35 quizzes
   },
-  {
-    id: 'math-ml',
+  'math-ml': {
     moodleId: null,
     name: 'Math for ML',
     level: 'Advanced',
@@ -85,7 +81,7 @@ const courses = [
     stats: { lessons: 100, duration: '8h' },
     comingSoon: true,
   },
-];
+};
 
 // Default progress for guests (will be updated with real data for logged-in users)
 const courseProgress = {
@@ -113,6 +109,7 @@ const NODE_SIZE = 4;
 const LINE_COLOR = "rgba(240,240,240,1)";
 const NODES_DISTANCE = 35;
 const SPEED_DAMPING = 0.8;
+const EMPTY_COURSE_NODES_COUNT = 5;
 
 class Particle {
   constructor(x, y, size, colorPrefix, opacity, parent, group) {
@@ -282,24 +279,32 @@ class ParticleSystem {
     const centerY = height / 2;
     const particles = [];
 
-    const nonEmptyCourses = Object.entries(courseProgress)
-      .filter(([_, progress]) => progress > 0);
+    const nodesCount = Object.entries(courseProgress).reduce((sum, [_, progress]) =>
+      sum + progress == 0 ? EMPTY_COURSE_NODES_COUNT : progress, 0);
 
-    // nodesCount now represents actual questions answered, not percentage
-    let nodesCount = nonEmptyCourses.reduce((sum, [_, progress]) => sum + progress, 0);
-
-    // Add decorative particles only if we have very few real particles
-    const fakeNodesCount = Math.max(0, 50 - nodesCount);
-    nodesCount += fakeNodesCount;
     this.scale = this.scaleCoefficient(nodesCount);
 
-    nonEmptyCourses.forEach(([courseId, progress], index) => {
-      if (progress === 0) return;
+    Object.entries(courseProgress).forEach(([courseId, progress], index) => {
+      if(courses[courseId].comingSoon)
+        return;
 
-      // Create course particle (center)
-      const colorKey = courseColorMap[courseId];
-      const config = courseColorConfigs[colorKey];
-      const colorPrefix = config.particles[Math.floor(Math.random() * config.particles.length)];
+      const count = progress == 0 ? EMPTY_COURSE_NODES_COUNT : progress;
+      let colorPrefix = "rgba(230,230,230,";
+
+      const getColor = progress == 0
+        ? () => colorPrefix
+        : () => {
+          const colorKey = courseColorMap[courseId];
+          const config = courseColorConfigs[colorKey];
+          return config.particles[Math.floor(Math.random() * config.particles.length)];
+        };
+
+      if (progress > 0) {
+        const colorKey = courseColorMap[courseId];
+        const config = courseColorConfigs[colorKey];
+        colorPrefix = config.particles[Math.floor(Math.random() * config.particles.length)];
+      }
+      
       const angle = Math.random() * Math.PI * 2;
       const dist = Math.random() * 30;
       const x = centerX + Math.cos(angle) * dist;
@@ -309,10 +314,8 @@ class ParticleSystem {
       const courseParticleIndex = particles.length - 1;
       
       // Create progress particles
-      for (let i = 0; i < progress; i++) {
-        const colorKey = courseColorMap[courseId];
-        const config = courseColorConfigs[colorKey];
-        const colorPrefix = config.particles[Math.floor(Math.random() * config.particles.length)];
+      for (let i = 0; i < count; i++) {
+        const colorPrefix = getColor();
         const angle = Math.random() * Math.PI * 2;
         const distance = Math.random() * 100;
         const x = courseParticle.x + Math.cos(angle) * distance;
@@ -321,17 +324,6 @@ class ParticleSystem {
         particles.push(particle);
       }
     });
-
-    // Create fake particles
-    for (let i = 0; i < fakeNodesCount; i++) {
-      const colorPrefix = "rgba(230,230,230,";
-      const angle = Math.random() * Math.PI * 2;
-      const distance = Math.random() * 100;
-      const x = centerX + Math.cos(angle) * distance;
-      const y = centerY + Math.sin(angle) * distance;
-      const particle = new Particle(x, y, NODE_SIZE * this.scale, colorPrefix, 1, -1, -1 - Math.floor(Math.random() * 3));
-      particles.push(particle);
-    }
     
     this.particles = particles;
   }
@@ -485,10 +477,10 @@ class ParticleSystem {
 function renderCourseCards() {
   const grid = document.getElementById('courses-grid');
 
-  courses.forEach(course => {
+  Object.entries(courses).forEach(([id, course]) => {
     const config = courseColorConfigs[course.color];
     // progress is now actual question count, not percentage (0-100)
-    const progress = courseProgress[course.id] || 0;
+    const progress = courseProgress[id] || 0;
     const progressPercentage = Math.round((progress / course.stats.lessons) * 100);
     
     const card = document.createElement('div');
@@ -550,7 +542,7 @@ function renderCourseCards() {
 async function fetchMoodleProgress() {
   try {
     // Get all Moodle course IDs
-    const moodleIds = courses
+    const moodleIds = Object.values(courses)
       .filter(c => c.moodleId !== null)
       .map(c => c.moodleId)
       .join(',');
@@ -563,11 +555,11 @@ async function fetchMoodleProgress() {
 
     if (data.success && data.data) {
       // Map Moodle course data back to frontend course IDs
-      courses.forEach(course => {
+      Object.entries(courses).forEach(([id, course]) => {
         if (course.moodleId && data.data[course.moodleId]) {
           const moodleData = data.data[course.moodleId];
           // Update progress: number of questions answered correctly
-          courseProgress[course.id] = moodleData.correct || 0;
+          courseProgress[id] = moodleData.correct || 0;
 
           console.log(`📊 ${course.name}: ${moodleData.correct}/${moodleData.total} questions answered`);
 
@@ -581,11 +573,6 @@ async function fetchMoodleProgress() {
       console.log('✅ Course Progress:', courseProgress);
       console.log('🎨 Creating particles for:', Object.values(courseProgress).reduce((a,b) => a+b, 0), 'questions');
 
-      // Update particle system if it exists
-      if (particleSystem) {
-        particleSystem.updateProgress(courseProgress);
-      }
-
       // Re-render course cards with new progress
       updateCourseCardsProgress();
     }
@@ -596,13 +583,13 @@ async function fetchMoodleProgress() {
 }
 
 function updateCourseCardsProgress() {
-  courses.forEach(course => {
-    const progress = courseProgress[course.id] || 0;
+  Object.entries(courses).forEach(([id, course]) => {
+    const progress = courseProgress[id] || 0;
     const progressPercentage = Math.round((progress / course.stats.lessons) * 100);
 
     // Find the course card
     const cards = document.querySelectorAll('.course-card');
-    const cardIndex = courses.indexOf(course);
+    const cardIndex = Object.keys(courses).indexOf(id);
     if (cardIndex >= 0 && cards[cardIndex]) {
       const card = cards[cardIndex];
       const progressLabel = card.querySelector('.progress-percentage');
@@ -630,11 +617,11 @@ document.addEventListener('DOMContentLoaded', () => {
   // Render course cards
   renderCourseCards();
 
-  // Initialize particle system
-  particleSystem = new ParticleSystem('hero-canvas');
-
   // Fetch real progress from Moodle (works for both logged-in and guest users)
   fetchMoodleProgress().then(() => {
     console.log('✅ Progress fetch completed!');
+
+    // Initialize particle system
+    particleSystem = new ParticleSystem('hero-canvas');
   });
 });
