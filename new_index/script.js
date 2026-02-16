@@ -111,6 +111,16 @@ const NODES_DISTANCE = 35;
 const SPEED_DAMPING = 0.8;
 const EMPTY_COURSE_NODES_COUNT = 10;
 
+// Scale configuration: tune these to control how particle sizes/padding
+// respond to particle density. `referenceArea` expresses a baseline
+// canvas area (in CSS pixels) used to normalize density so zooming is stable.
+const SCALE_CONFIG = {
+  constant: 12,
+  min: 0.1,
+  max: 2.0,
+  referenceArea: 1000000
+};
+
 class Particle {
   constructor(x, y, size, colorPrefix, opacity, parent, group) {
     this.x = x;
@@ -221,8 +231,10 @@ class ParticleSystem {
     const hero = this.canvas.parentElement;
     if (!hero) return;
     
-    const oldCenterX = this.canvas.width / 2;
-    const oldCenterY = this.canvas.height / 2;
+    // prefer last known centers in CSS pixels (set after first init),
+    // fallback to current canvas dimensions
+    const oldCenterX = (this.lastCenterX && this.lastCenterX > 0) ? this.lastCenterX : (this.canvas.width / 2);
+    const oldCenterY = (this.lastCenterY && this.lastCenterY > 0) ? this.lastCenterY : (this.canvas.height / 2);
     
     const width = hero.clientWidth;
     const height = hero.clientHeight;
@@ -236,18 +248,27 @@ class ParticleSystem {
       this.lastCenterX = width / 2;
       this.lastCenterY = height / 2;
     } else {
-      this.updateScale(oldCenterX, oldCenterY);
+      this.updateScale(oldCenterX, oldCenterY, width, height);
       this.lastCenterX = width / 2;
       this.lastCenterY = height / 2;
     }
   }
 
-  scaleCoefficient(nodesCount) {
-    if (nodesCount === 0) return 1.0;
-    return Math.min(1, 12 / Math.sqrt(nodesCount));
+  scaleCoefficient(nodesCount, width, height) {
+    // Use particle density (nodes / area) so visual scale remains consistent
+    // when page zoom or devicePixelRatio changes.
+    if (!nodesCount || nodesCount <= 0) return SCALE_CONFIG.max;
+
+    const w = width || (this.canvas ? this.canvas.width : 1);
+    const h = height || (this.canvas ? this.canvas.height : 1);
+    const area = Math.max(1, w * h);
+
+    const normalizedNodes = (nodesCount * SCALE_CONFIG.referenceArea) / area;
+    const raw = SCALE_CONFIG.constant / Math.sqrt(Math.max(1, normalizedNodes));
+    return Math.max(SCALE_CONFIG.min, Math.min(SCALE_CONFIG.max, raw));
   }
 
-  updateScale(oldCenterX, oldCenterY) {
+  updateScale(oldCenterX, oldCenterY, newWidth, newHeight) {
     const nonEmptyCourses = Object.entries(courseProgress)
       .filter(([_, progress]) => progress > 0);
 
@@ -255,12 +276,13 @@ class ParticleSystem {
     const fakeNodesCount = Math.max(0, 50 - nodesCount);
     nodesCount += fakeNodesCount;
     
-    const newScale = this.scaleCoefficient(nodesCount);
+    // Use CSS pixel width/height passed from resize so density is stable across zoom
+    const newScale = this.scaleCoefficient(nodesCount, newWidth || this.canvas.width, newHeight || this.canvas.height);
     const scaleRatio = newScale / this.scale;
     this.scale = newScale;
 
-    const newCenterX = this.canvas.width / 2;
-    const newCenterY = this.canvas.height / 2;
+    const newCenterX = (newWidth || this.canvas.width) / 2;
+    const newCenterY = (newHeight || this.canvas.height) / 2;
 
     this.particles.forEach(particle => {
       particle.baseSize *= scaleRatio;
@@ -280,9 +302,9 @@ class ParticleSystem {
     const particles = [];
 
     const nodesCount = Object.entries(courseProgress).reduce((sum, [_, progress]) =>
-      sum + progress == 0 ? EMPTY_COURSE_NODES_COUNT : progress, 0);
+      sum + (progress === 0 ? EMPTY_COURSE_NODES_COUNT : progress), 0);
 
-    this.scale = this.scaleCoefficient(nodesCount);
+    this.scale = this.scaleCoefficient(nodesCount, width, height);
 
     Object.entries(courseProgress).forEach(([courseId, progress], index) => {
       if(courses[courseId].comingSoon)
@@ -620,6 +642,11 @@ document.addEventListener('DOMContentLoaded', () => {
   // Fetch real progress from Moodle (works for both logged-in and guest users)
   fetchMoodleProgress().then(() => {
     console.log('✅ Progress fetch completed!');
+
+    courseProgress['python1'] = 150;
+    courseProgress['python2'] = 150;
+    courseProgress['math101'] = 150;
+    courseProgress['math-ml'] = 150;
 
     // Initialize particle system
     particleSystem = new ParticleSystem('hero-canvas');
