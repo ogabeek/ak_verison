@@ -23,24 +23,6 @@ const courseColorConfigs = {
     button: '#8b5cf6',
     particles: ['rgba(139,92,246,', 'rgba(167,139,250,'],
   },
-  pink: {
-    icon: '#fce7f3',
-    button: '#ec4899',
-    particles: ['rgba(236,72,153,', 'rgba(244,114,182,'],
-  },
-  cyan: {
-    icon: '#cffafe',
-    button: '#06b6d4',
-    particles: ['rgba(6,182,212,', 'rgba(34,211,238,'],
-  },
-};
-
-// Course ID mapping: frontend ID → Moodle course ID
-const courseMoodleMap = {
-  python1: 297,
-  python2: 308,
-  math101: 220,
-  'math-ml': null, // Coming soon
 };
 
 const courses = {
@@ -51,7 +33,7 @@ const courses = {
     description: 'Master the fundamentals of Python programming with hands-on projects and interactive coding exercises.',
     icon: '🐍',
     color: 'blue',
-    stats: { lessons: 260, duration: '4h' }, // 260 exercises across 28 quizzes
+    stats: { exercises: 260, lessons: 28, duration: '30h' },
   },
   python2: {
     moodleId: 308,
@@ -60,7 +42,7 @@ const courses = {
     description: 'Advanced Python concepts including OOP, web frameworks, and real-world application development.',
     icon: '🚀',
     color: 'green',
-    stats: { lessons: 196, duration: '6h' }, // 196 exercises across 25 quizzes
+    stats: { exercises: 196, lessons: 25, duration: '36h' },
   },
   math101: {
     moodleId: 220,
@@ -69,7 +51,7 @@ const courses = {
     description: 'Build a strong mathematical foundation with interactive problem-solving and visual learning tools.',
     icon: '📐',
     color: 'orange',
-    stats: { lessons: 377, duration: '5h' }, // 377 exercises across 35 quizzes
+    stats: { exercises: 377, lessons: 35, duration: '25h' },
   },
   'math-ml': {
     moodleId: null,
@@ -78,7 +60,7 @@ const courses = {
     description: 'Learn data analysis, visualization, and machine learning fundamentals with Python and popular libraries.',
     icon: '🤖',
     color: 'purple',
-    stats: { lessons: 100, duration: '8h' },
+    stats: { exercises: 100, lessons: 0, duration: '48h' },
     comingSoon: true,
   },
 };
@@ -91,15 +73,6 @@ const courseProgress = {
   'math-ml': 0,
 };
 
-const courseColorMap = {
-  python1: 'blue',
-  python2: 'green',
-  math101: 'orange',
-  datascience: 'purple',
-  webdev: 'pink',
-  algorithms: 'cyan',
-  'math-ml': 'purple',
-};
 
 // ============================================
 // PARTICLE SYSTEM
@@ -109,7 +82,7 @@ const NODE_SIZE = 4;
 const LINE_COLOR = "rgba(240,240,240,1)";
 const NODES_DISTANCE = 35;
 const SPEED_DAMPING = 0.8;
-const EMPTY_COURSE_NODES_COUNT = 10;
+const EMPTY_COURSE_NODES_COUNT = 30;
 
 // Scale configuration: tune these to control how particle sizes/padding
 // respond to particle density. `referenceArea` expresses a baseline
@@ -122,14 +95,9 @@ const SCALE_CONFIG = {
 };
 
 class Particle {
-  constructor(x, y, size, colorPrefix, opacity, parent, group) {
+  constructor(x, y, size, colorPrefix, opacity, group) {
     this.x = x;
     this.y = y;
-    this.parent = parent;
-    this.hasParent = parent !== -1;
-    this.parentX = 0;
-    this.parentY = 0;
-    this.parentSize = 0;
     this.baseSize = size;
     this.opacity = opacity;
     this.colorPrefix = colorPrefix;
@@ -141,23 +109,16 @@ class Particle {
     this.pulse = 1;
   }
   
-  update(time, parentX, parentY, parentSize) {
+  update(time) {
     this.pulse = Math.sin(time * 0.01 + this.timeOffset);
     this.size = this.baseSize * (1 + this.pulse * 0.1);
     this.velocityX *= SPEED_DAMPING;
     this.velocityY *= SPEED_DAMPING;
     this.x += this.velocityX;
     this.y += this.velocityY;
-    this.parentX = parentX;
-    this.parentY = parentY;
-    this.parentSize = parentSize;
-  }
-  
-  draw(ctx) {
-    this.drawCircle(ctx);
   }
 
-  drawCircle(ctx) {
+  draw(ctx) {
     ctx.fillStyle = this.colorPrefix + this.opacity.toFixed(2) + ')';
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
@@ -186,10 +147,12 @@ class ParticleSystem {
     this.mouse = { x: -1000, y: -1000 };
     this.mouseClick = false;
     this.scale = 1;
-    this.lastProgress = '';
     this.initialized = false;
     this.lastCenterX = 0;
     this.lastCenterY = 0;
+    this.frames = 0;
+    this.fps = 0;
+    this.lastFpsTime = performance.now();
     
     this.init();
   }
@@ -273,7 +236,7 @@ class ParticleSystem {
       .filter(([_, progress]) => progress > 0);
 
     let nodesCount = nonEmptyCourses.reduce((sum, [_, progress]) => sum + progress, 0);
-    const fakeNodesCount = Math.max(0, 50 - nodesCount);
+    const fakeNodesCount = Math.max(0, 100 - nodesCount);
     nodesCount += fakeNodesCount;
     
     // Use CSS pixel width/height passed from resize so density is stable across zoom
@@ -310,40 +273,28 @@ class ParticleSystem {
       if(courses[courseId].comingSoon)
         return;
 
-      const count = progress == 0 ? EMPTY_COURSE_NODES_COUNT : progress;
-      let colorPrefix = "rgba(230,230,230,";
+      const count = progress === 0 ? EMPTY_COURSE_NODES_COUNT : progress;
+      const grey = "rgba(230,230,230,";
+      const config = progress > 0 ? courseColorConfigs[courses[courseId].color] : null;
+      const randomColor = () => config.particles[Math.floor(Math.random() * config.particles.length)];
 
-      const getColor = progress == 0
-        ? () => colorPrefix
-        : () => {
-          const colorKey = courseColorMap[courseId];
-          const config = courseColorConfigs[colorKey];
-          return config.particles[Math.floor(Math.random() * config.particles.length)];
-        };
-
-      if (progress > 0) {
-        const colorKey = courseColorMap[courseId];
-        const config = courseColorConfigs[colorKey];
-        colorPrefix = config.particles[Math.floor(Math.random() * config.particles.length)];
-      }
-      
+      // Hub particle: colored if progress, grey if empty
+      const hubColor = config ? randomColor() : grey;
       const angle = Math.random() * Math.PI * 2;
       const dist = Math.random() * 30;
       const x = centerX + Math.cos(angle) * dist;
       const y = centerY + Math.sin(angle) * dist;
-      const courseParticle = new Particle(x, y, 3 * NODE_SIZE * this.scale, colorPrefix, 1, -1, index);
+      const courseParticle = new Particle(x, y, 3 * NODE_SIZE * this.scale, hubColor, 1, index);
       particles.push(courseParticle);
-      const courseParticleIndex = particles.length - 1;
-      
-      // Create progress particles
+
+      // Child particles
       for (let i = 0; i < count; i++) {
-        const colorPrefix = getColor();
-        const angle = Math.random() * Math.PI * 2;
+        const color = config ? randomColor() : grey;
+        const a = Math.random() * Math.PI * 2;
         const distance = Math.random() * 100;
-        const x = courseParticle.x + Math.cos(angle) * distance;
-        const y = courseParticle.y + Math.sin(angle) * distance;
-        const particle = new Particle(x, y, NODE_SIZE * this.scale, colorPrefix, 1, courseParticleIndex, index);
-        particles.push(particle);
+        const px = courseParticle.x + Math.cos(a) * distance;
+        const py = courseParticle.y + Math.sin(a) * distance;
+        particles.push(new Particle(px, py, NODE_SIZE * this.scale, color, 1, index));
       }
     });
     
@@ -459,37 +410,26 @@ class ParticleSystem {
     }
     
     // Update particle positions
-    particles.forEach(particle => {
-      const parent = particle.parent === -1 ? null : particles[particle.parent];
-      const parentX = parent ? parent.x : 0;
-      const parentY = parent ? parent.y : 0;
-      const parentSize = parent ? parent.size : 0;
-      particle.update(this.time, parentX, parentY, parentSize);
-    });
+    particles.forEach(particle => particle.update(this.time));
     
     // Draw particles
     particles.forEach(particle => particle.draw(this.ctx));
-    
+
+    // FPS counter
+    this.frames++;
+    const now = performance.now();
+    if (now - this.lastFpsTime >= 1000) {
+      this.fps = this.frames;
+      this.frames = 0;
+      this.lastFpsTime = now;
+    }
+    this.ctx.fillStyle = 'rgba(0,0,0,0.4)';
+    this.ctx.font = '11px monospace';
+    this.ctx.fillText(`${this.fps} fps / ${particles.length} particles`, 8, 16);
+
     this.animationFrame = requestAnimationFrame(() => this.animate());
   }
 
-  updateProgress(newProgress) {
-    const progressKey = JSON.stringify(newProgress);
-    if (progressKey === this.lastProgress) return;
-    this.lastProgress = progressKey;
-    
-    Object.assign(courseProgress, newProgress);
-    
-    const width = this.canvas.width;
-    const height = this.canvas.height;
-    
-    if (width > 0 && height > 0 && !this.initialized) {
-      this.createParticles(width, height);
-      this.initialized = true;
-    } else if (this.initialized) {
-      this.createParticles(width, height);
-    }
-  }
 }
 
 // ============================================
@@ -503,11 +443,11 @@ function renderCourseCards() {
     const config = courseColorConfigs[course.color];
     // progress is now actual question count, not percentage (0-100)
     const progress = courseProgress[id] || 0;
-    const progressPercentage = Math.round((progress / course.stats.lessons) * 100);
-    
+    const progressPercentage = Math.round((progress / course.stats.exercises) * 100);
+
     const card = document.createElement('div');
     card.className = `course-card${course.comingSoon ? ' coming-soon' : ''}`;
-    
+
     card.innerHTML = `
       <div class="card-header">
         <div class="course-icon" style="background: ${config.icon}">
@@ -518,14 +458,14 @@ function renderCourseCards() {
           <span class="course-level">${course.level}</span>
         </div>
       </div>
-      
+
       <div class="card-body">
         <p class="course-description">${course.description}</p>
-        
+
         <div class="course-progress">
           <div class="progress-label">
             <span>Progress</span>
-            <span class="progress-percentage">${progress}/${course.stats.lessons}</span>
+            <span class="progress-percentage">${progress}/${course.stats.exercises}</span>
           </div>
           <div class="progress-bar-container">
             <div 
@@ -573,33 +513,21 @@ async function fetchMoodleProgress() {
     const response = await fetch(`/local/questionprogress.php?courses=${moodleIds}`);
     const data = await response.json();
 
-    console.log('🔍 API Response:', data);
-
     if (data.success && data.data) {
-      // Map Moodle course data back to frontend course IDs
       Object.entries(courses).forEach(([id, course]) => {
         if (course.moodleId && data.data[course.moodleId]) {
           const moodleData = data.data[course.moodleId];
-          // Update progress: number of questions answered correctly
           courseProgress[id] = moodleData.correct || 0;
 
-          console.log(`📊 ${course.name}: ${moodleData.correct}/${moodleData.total} questions answered`);
-
-          // Update course stats with actual total from Moodle if available
           if (moodleData.total > 0) {
-            course.stats.lessons = moodleData.total;
+            course.stats.exercises = moodleData.total;
           }
         }
       });
 
-      console.log('✅ Course Progress:', courseProgress);
-      console.log('🎨 Creating particles for:', Object.values(courseProgress).reduce((a,b) => a+b, 0), 'questions');
-
-      // Re-render course cards with new progress
       updateCourseCardsProgress();
     }
   } catch (error) {
-    console.error('❌ Failed to fetch Moodle progress:', error);
     // Keep default progress on error
   }
 }
@@ -607,9 +535,8 @@ async function fetchMoodleProgress() {
 function updateCourseCardsProgress() {
   Object.entries(courses).forEach(([id, course]) => {
     const progress = courseProgress[id] || 0;
-    const progressPercentage = Math.round((progress / course.stats.lessons) * 100);
+    const progressPercentage = Math.round((progress / course.stats.exercises) * 100);
 
-    // Find the course card
     const cards = document.querySelectorAll('.course-card');
     const cardIndex = Object.keys(courses).indexOf(id);
     if (cardIndex >= 0 && cards[cardIndex]) {
@@ -618,7 +545,7 @@ function updateCourseCardsProgress() {
       const progressBar = card.querySelector('.progress-bar-fill');
 
       if (progressLabel) {
-        progressLabel.textContent = `${progress}/${course.stats.lessons}`;
+        progressLabel.textContent = `${progress}/${course.stats.exercises}`;
       }
       if (progressBar) {
         progressBar.style.width = `${progressPercentage}%`;
@@ -628,24 +555,64 @@ function updateCourseCardsProgress() {
 }
 
 // ============================================
+// TYPEWRITER
+// ============================================
+
+function startTypewriter(elementId, text, { delay = 900, speed = 52, pauseEnd = 20000, loop = false } = {}) {
+  const el = document.getElementById(elementId);
+  if (!el) return;
+
+  let charIndex = 0;
+  let erasing = false;
+  let timer = null;
+
+  function type() {
+    if (!erasing) {
+      el.textContent = text.slice(0, charIndex + 1);
+      charIndex++;
+      if (charIndex === text.length) {
+        timer = setTimeout(() => { erasing = true; tick(); }, pauseEnd);
+        return;
+      }
+    } else {
+      el.textContent = text.slice(0, charIndex);
+      charIndex--;
+      if (charIndex === 0) {
+        if (loop) {
+          erasing = false;
+          timer = setTimeout(tick, delay * 0.6);
+        } else {
+          el.classList.add('no-cursor');
+        }
+        return;
+      }
+    }
+    tick();
+  }
+
+  function tick() {
+    const interval = erasing ? speed * 0.55 : speed;
+    timer = setTimeout(type, interval);
+  }
+
+  timer = setTimeout(tick, delay);
+}
+
+// ============================================
 // INITIALIZATION
 // ============================================
 
 let particleSystem;
 
 document.addEventListener('DOMContentLoaded', () => {
-  console.log('🚀 Page loaded! Starting initialization...');
-
-  // Render course cards
   renderCourseCards();
+  setupCopyableFooterItems();
 
-  // Fetch real progress from Moodle (works for both logged-in and guest users)
   fetchMoodleProgress().then(() => {
-    console.log('✅ Progress fetch completed!');
-
-    // Initialize particle system
     particleSystem = new ParticleSystem('hero-canvas');
   });
+
+  startTypewriter('hero-tagline', 'Grow your Net by solving exercises');
 });
 
 // -------------------------------
@@ -689,8 +656,3 @@ function setupCopyableFooterItems() {
   });
 }
 
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', setupCopyableFooterItems);
-} else {
-  setupCopyableFooterItems();
-}

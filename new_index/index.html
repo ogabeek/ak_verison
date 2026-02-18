@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Leagues of Code</title>
-  <link rel="stylesheet" href="styles.css?v=6">
+  <link rel="stylesheet" href="styles.css?v=12">
 </head>
 <body>
   <div class="app">
@@ -13,9 +13,13 @@
       <canvas id="hero-canvas"></canvas>
       <div class="hero-content">
         <h1>Leagues of Code</h1>
-        <p>Grow your Net by solving exercises</p>
       </div>
     </section>
+
+    <!-- Tagline below the NET -->
+    <div class="hero-tagline-wrap">
+      <p class="hero-tagline" id="hero-tagline" aria-label="Grow your Net by solving exercises"></p>
+    </div>
 
     <!-- Courses Section -->
     <section class="courses-section">
@@ -83,7 +87,7 @@
               </a>
             </div>
 
-            <div style="display: flex; gap: 4px; align-items: center;">
+            <div class="footer-brand-row">
               <svg
                 width="28.9"
                 height="20.0"
@@ -108,11 +112,11 @@
             </div>
 
             <p>Carrer de Rosa Sensat, 9-11, 08005 Barcelona</p>
-            <div style="margin-top: 10px;">
+            <div class="footer-legal">
               <a href="https://www.leaguesofcode.com/terms">Terms & Conditions</a>
               <a href="https://www.leaguesofcode.com/privacy">Privacy Policy</a>
             </div>
-            <p style="margin-top: 15px; font-size: 0.8rem; opacity: 0.7;">
+            <p class="footer-copyright">
               © 2026 Leagues of Code. All Rights Reserved
             </p>
           </div>
@@ -160,7 +164,7 @@
               </span>
             </div>
 
-            <div class="footer-badges" style="margin-top: 12px;">
+            <div class="footer-badges footer-social">
               <a
                 href="https://www.instagram.com/leaguesofcode"
                 target="_blank"
@@ -231,6 +235,6 @@
     </footer>
   </div>
 
-  <script src="script.js?v=6"></script>
+  <script src="script.js?v=12"></script>
 </body>
 </html>
