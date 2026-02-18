@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Login – Leagues of Code</title>
+  <link rel="stylesheet" href="styles.css?v=6">
+</head>
+<body>
+<div class="app">
+  <!-- Left: Form -->
+  <div class="left">
+    <a href="#" class="logo">
+      <img src="logo.svg" alt="Leagues of Code" width="36" height="36"/>
+      <span class="logo-text">Leagues of Code</span>
+    </a>
+
+    <div class="form-area">
+      <p class="tagline">Welcome back</p>
+      <h1>Log in to your account</h1>
+
+      <form>
+        <div class="field">
+          <input type="email" id="email" placeholder="Email" autocomplete="email"/>
+        </div>
+
+        <div class="field">
+          <input type="password" id="password" placeholder="Password" autocomplete="current-password"/>
+          <button type="button" class="eye-btn" id="togglePwd" aria-label="Toggle password visibility">
+            <svg id="eyeIcon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+          </button>
+        </div>
+
+        <button type="submit" class="btn-primary">Create account</button>
+        <a href="#" class="forgot">Forgot password?</a>
+      </form>
+    </div>
+
+    <div class="footer-links">
+      <a href="#">Privacy Policy</a> and <a href="#">Terms of Service</a> apply
+    </div>
+  </div>
+
+  <!-- Right: Hero -->
+  <div class="right">
+    <div class="right-content">
+      <h2>Welcome back!</h2>
+      <p>Let's continue the journey with Leagues of Code. Start building your future today and become the next generation of innovator.</p>
+    </div>
+  </div>
+</div>
+<script src="script.js?v=6"></script>
+</body>
+</html>
