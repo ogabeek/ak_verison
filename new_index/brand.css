@@ -1,0 +1,73 @@
+/* ============================================================
+   LEAGUES OF CODE — DESIGN TOKENS
+   Single source of truth for all brand colours and aliases.
+   Import this file first in any stylesheet:
+     @import './brand.css';
+   ============================================================ */
+
+:root {
+
+  /* ----------------------------------------------------------
+     PRIMARY PALETTE
+     The two core brand blues that appear in the logo mark.
+  ---------------------------------------------------------- */
+  --loc-blue:       #3844FF;   /* RGB 56  68 255  |  CMYK C77 M73 Y0  K0  */
+  --loc-cyan:       #38C9FF;   /* RGB 56 201 255  |  CMYK C78 M21 Y0  K0  */
+  --loc-dark:       #05071D;   /* RGB  5   7  29  |  CMYK C83 M76 Y0  K89 */
+  --loc-white:      #FFFFFF;   /* RGB 255 255 255 |  CMYK C0  M0  Y0  K0  */
+
+  /* ----------------------------------------------------------
+     SECONDARY PALETTE  (I → V, light → vibrant)
+     Named by hue for clarity; Roman numerals preserved as
+     --loc-sec-{i…v} for programmatic use.
+  ---------------------------------------------------------- */
+  --loc-sec-i:      #38C9FF;   /* Cyan    — same as primary --loc-cyan   */
+  --loc-sec-ii:     #CF75FF;   /* Violet                                  */
+  --loc-sec-iii:    #EB4869;   /* Coral / Red                             */
+  --loc-sec-iv:     #F8CD46;   /* Yellow                                  */
+  --loc-sec-v:      #5CC88D;   /* Green                                   */
+
+  /* ----------------------------------------------------------
+     SEMANTIC ALIASES
+     Use these throughout UI code instead of raw hex values
+     so a future rebrand only touches this file.
+  ---------------------------------------------------------- */
+
+  /* Actions & interactive */
+  --color-primary:        var(--loc-blue);
+  --color-primary-light:  var(--loc-cyan);
+  --color-accent-violet:  var(--loc-sec-ii);
+  --color-accent-coral:   var(--loc-sec-iii);
+  --color-accent-yellow:  var(--loc-sec-iv);
+  --color-accent-green:   var(--loc-sec-v);
+
+  /* Backgrounds */
+  --color-bg-dark:        var(--loc-dark);
+  --color-bg-light:       var(--loc-white);
+
+  /* Gradients (logo mark direction) */
+  --gradient-brand:       linear-gradient(135deg, var(--loc-blue) 0%, var(--loc-cyan) 100%);
+  --gradient-brand-dark:  linear-gradient(135deg, var(--loc-dark) 0%, var(--loc-blue) 100%);
+
+  /* ----------------------------------------------------------
+     COURSE COLOUR MAPPING  (matches courseColorConfigs in JS)
+  ---------------------------------------------------------- */
+  --course-blue-icon:     #dbeafe;
+  --course-blue-btn:      #3b82f6;
+
+  --course-green-icon:    #d1fae5;
+  --course-green-btn:     #10b981;
+
+  --course-orange-icon:   #fef3c7;
+  --course-orange-btn:    #f59e0b;
+
+  --course-purple-icon:   #ede9fe;
+  --course-purple-btn:    #8b5cf6;
+
+  --course-grey-icon:     #f3f4f6;
+  --course-grey-btn:      #6b7280;
+
+  --course-cyan-icon:     #cffafe;
+  --course-cyan-btn:      #06b6d4;
+
+}
