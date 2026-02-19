@@ -422,10 +422,9 @@ class ParticleSystem {
       this.fps = this.frames;
       this.frames = 0;
       this.lastFpsTime = now;
+      const statsEl = document.getElementById('perf-stats');
+      if (statsEl) statsEl.textContent = `FPS: ${this.fps} | Particles: ${particles.length}`;
     }
-    this.ctx.fillStyle = 'rgba(0,0,0,0.4)';
-    this.ctx.font = '11px monospace';
-    this.ctx.fillText(`${this.fps} fps / ${particles.length} particles`, 8, 16);
 
     this.animationFrame = requestAnimationFrame(() => this.animate());
   }
@@ -558,6 +557,10 @@ function updateCourseCardsProgress() {
 // TYPEWRITER
 // ============================================
 
+// ============================================
+// TYPEWRITER
+// ============================================
+
 function startTypewriter(elementId, text, { delay = 900, speed = 52, pauseEnd = 20000, loop = false } = {}) {
   const el = document.getElementById(elementId);
   if (!el) return;
@@ -565,24 +568,31 @@ function startTypewriter(elementId, text, { delay = 900, speed = 52, pauseEnd = 
   let charIndex = 0;
   let erasing = false;
   let timer = null;
+  let idle = false; // true once erasing is fully done
+
+  function clearTimer() {
+    if (timer) { clearTimeout(timer); timer = null; }
+  }
 
   function type() {
     if (!erasing) {
-      el.textContent = text.slice(0, charIndex + 1);
       charIndex++;
+      el.textContent = text.slice(0, charIndex);
       if (charIndex === text.length) {
         timer = setTimeout(() => { erasing = true; tick(); }, pauseEnd);
         return;
       }
     } else {
-      el.textContent = text.slice(0, charIndex);
       charIndex--;
+      el.textContent = text.slice(0, charIndex);
       if (charIndex === 0) {
         if (loop) {
           erasing = false;
           timer = setTimeout(tick, delay * 0.6);
         } else {
+          // fully erased — hide cursor and mark idle
           el.classList.add('no-cursor');
+          idle = true;
         }
         return;
       }
@@ -594,6 +604,18 @@ function startTypewriter(elementId, text, { delay = 900, speed = 52, pauseEnd = 
     const interval = erasing ? speed * 0.55 : speed;
     timer = setTimeout(type, interval);
   }
+
+  // Hover on the tagline wrapper retypes when idle
+  const wrap = el.closest('.hero-tagline-wrap') || el;
+  wrap.addEventListener('mouseenter', () => {
+    if (!idle) return;
+    idle = false;
+    erasing = false;
+    charIndex = 0;
+    el.classList.remove('no-cursor');
+    clearTimer();
+    timer = setTimeout(tick, delay * 0.4);
+  });
 
   timer = setTimeout(tick, delay);
 }
