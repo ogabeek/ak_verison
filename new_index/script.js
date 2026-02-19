@@ -23,6 +23,16 @@ const courseColorConfigs = {
     button: '#8b5cf6',
     particles: ['rgba(139,92,246,', 'rgba(167,139,250,'],
   },
+  grey: {
+    icon: '#f3f4f6',
+    button: '#6b7280',
+    particles: ['rgba(107,114,128,', 'rgba(156,163,175,'],
+  },
+  cyan: {
+    icon: '#cffafe',
+    button: '#06b6d4',
+    particles: ['rgba(6,182,212,', 'rgba(34,211,238,'],
+  },
 };
 
 const courses = {
@@ -33,7 +43,7 @@ const courses = {
     description: 'Master the fundamentals of Python programming with hands-on projects and interactive coding exercises.',
     icon: '🐍',
     color: 'blue',
-    stats: { exercises: 260, lessons: 28, duration: '30h' },
+    stats: { exercises: 260, lessons: 25, duration: '30h' },
   },
   python2: {
     moodleId: 308,
@@ -42,7 +52,7 @@ const courses = {
     description: 'Advanced Python concepts including OOP, web frameworks, and real-world application development.',
     icon: '🚀',
     color: 'green',
-    stats: { exercises: 196, lessons: 25, duration: '36h' },
+    stats: { exercises: 196, lessons: 10, duration: '36h' },
   },
   math101: {
     moodleId: 220,
@@ -51,7 +61,7 @@ const courses = {
     description: 'Build a strong mathematical foundation with interactive problem-solving and visual learning tools.',
     icon: '📐',
     color: 'orange',
-    stats: { exercises: 377, lessons: 35, duration: '25h' },
+    stats: { exercises: 377, lessons: 16, duration: '25h' },
   },
   'math-ml': {
     moodleId: null,
@@ -63,6 +73,12 @@ const courses = {
     stats: { exercises: 100, lessons: 0, duration: '48h' },
     comingSoon: true,
   },
+  // All other platform courses grouped into one particle cluster — no card rendered
+  other: {
+    moodleId: null,
+    color: 'cyan',
+    noCard: true,
+  },
 };
 
 // Default progress for guests (will be updated with real data for logged-in users)
@@ -71,6 +87,7 @@ const courseProgress = {
   python2: 0,
   math101: 0,
   'math-ml': 0,
+  other: 0,
 };
 
 
@@ -264,14 +281,16 @@ class ParticleSystem {
     const centerY = height / 2;
     const particles = [];
 
-    const nodesCount = Object.entries(courseProgress).reduce((sum, [_, progress]) =>
-      sum + (progress === 0 ? EMPTY_COURSE_NODES_COUNT : progress), 0);
+    const nodesCount = Object.entries(courseProgress).reduce((sum, [id, progress]) => {
+      if (courses[id]?.comingSoon) return sum; // skip coming soon
+      return sum + (progress === 0 ? EMPTY_COURSE_NODES_COUNT : progress);
+    }, 0);
 
     this.scale = this.scaleCoefficient(nodesCount, width, height);
 
     Object.entries(courseProgress).forEach(([courseId, progress], index) => {
-      if(courses[courseId].comingSoon)
-        return;
+      if (courses[courseId].comingSoon) return; // skip coming soon — no particles
+      // noCard courses (like 'other') still get a particle cluster, just no card
 
       const count = progress === 0 ? EMPTY_COURSE_NODES_COUNT : progress;
       const grey = "rgba(230,230,230,";
@@ -439,6 +458,7 @@ function renderCourseCards() {
   const grid = document.getElementById('courses-grid');
 
   Object.entries(courses).forEach(([id, course]) => {
+    if (course.noCard) return;
     const config = courseColorConfigs[course.color];
     // progress is now actual question count, not percentage (0-100)
     const progress = courseProgress[id] || 0;
@@ -509,11 +529,12 @@ async function fetchMoodleProgress() {
       .join(',');
 
     // Use questionprogress.php for exercise-level tracking
-    const response = await fetch(`/local/questionprogress.php?courses=${moodleIds}`);
+    const response = await fetch(`/local/questionprogress.php?courses=${moodleIds}&all=1`);
     const data = await response.json();
 
     if (data.success && data.data) {
       Object.entries(courses).forEach(([id, course]) => {
+        if (!course.stats) return; // skip stat-less entries like 'other'
         if (course.moodleId && data.data[course.moodleId]) {
           const moodleData = data.data[course.moodleId];
           courseProgress[id] = moodleData.correct || 0;
@@ -521,8 +542,15 @@ async function fetchMoodleProgress() {
           if (moodleData.total > 0) {
             course.stats.exercises = moodleData.total;
           }
+          if (moodleData.lessons > 0) {
+            course.stats.lessons = moodleData.lessons;
+          }
         }
       });
+
+      if (data.data.other) {
+        courseProgress.other = data.data.other.correct || 0;
+      }
 
       updateCourseCardsProgress();
     }
@@ -532,23 +560,31 @@ async function fetchMoodleProgress() {
 }
 
 function updateCourseCardsProgress() {
+  const cards = document.querySelectorAll('.course-card');
+  let cardIndex = 0;
   Object.entries(courses).forEach(([id, course]) => {
+    if (course.noCard || !course.stats) return; // skip non-card entries
     const progress = courseProgress[id] || 0;
     const progressPercentage = Math.round((progress / course.stats.exercises) * 100);
 
-    const cards = document.querySelectorAll('.course-card');
-    const cardIndex = Object.keys(courses).indexOf(id);
-    if (cardIndex >= 0 && cards[cardIndex]) {
-      const card = cards[cardIndex];
-      const progressLabel = card.querySelector('.progress-percentage');
-      const progressBar = card.querySelector('.progress-bar-fill');
+    const card = cards[cardIndex];
+    cardIndex++;
+    if (!card) return;
 
-      if (progressLabel) {
-        progressLabel.textContent = `${progress}/${course.stats.exercises}`;
-      }
-      if (progressBar) {
-        progressBar.style.width = `${progressPercentage}%`;
-      }
+    const progressLabel = card.querySelector('.progress-percentage');
+    const progressBar = card.querySelector('.progress-bar-fill');
+    const lessonsEl = [...card.querySelectorAll('.stat')]
+      .find(s => s.querySelector('.stat-label')?.textContent === 'Lessons')
+      ?.querySelector('.stat-value');
+
+    if (progressLabel) {
+      progressLabel.textContent = `${progress}/${course.stats.exercises}`;
+    }
+    if (progressBar) {
+      progressBar.style.width = `${progressPercentage}%`;
+    }
+    if (lessonsEl) {
+      lessonsEl.textContent = course.stats.lessons;
     }
   });
 }
@@ -557,43 +593,87 @@ function updateCourseCardsProgress() {
 // TYPEWRITER
 // ============================================
 
-// ============================================
-// TYPEWRITER
-// ============================================
+const TYPEWRITER_MESSAGES = [
+  {
+    text: 'Grow your Net by solving exercises',
+    pauseEnd: 20000,
+    link: null,
+  },
+  {
+    text: 'Join our community on Telegram  ⌯⌲ ',
+    pauseEnd: 30000,
+    link: 'https://t.me/+kzlIFQy-XrwxODI8',
+  },
+];
 
-function startTypewriter(elementId, text, { delay = 900, speed = 52, pauseEnd = 20000, loop = false } = {}) {
+function startTypewriter(elementId) {
   const el = document.getElementById(elementId);
   if (!el) return;
 
+  // Build inner structure: [text node] [cursor span]
+  // Cursor is always present in the DOM — no absolute positioning tricks
+  el.innerHTML = '';
+  const textEl = document.createElement('span');
+  textEl.className = 'tagline-text';
+  const cursor = document.createElement('span');
+  cursor.className = 'tagline-cursor';
+  cursor.setAttribute('aria-hidden', 'true');
+  cursor.textContent = '|';
+  el.appendChild(textEl);
+  el.appendChild(cursor);
+
+  let msgIndex = 0;
   let charIndex = 0;
   let erasing = false;
   let timer = null;
-  let idle = false; // true once erasing is fully done
+  let linkShown = false;
+
+  function currentMsg() { return TYPEWRITER_MESSAGES[msgIndex]; }
+  function currentText() { return currentMsg().text; }
 
   function clearTimer() {
     if (timer) { clearTimeout(timer); timer = null; }
   }
 
+  function showLink() {
+    if (linkShown || !currentMsg().link) return;
+    linkShown = true;
+    textEl.innerHTML = '';
+    const a = document.createElement('a');
+    a.href = currentMsg().link;
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    a.className = 'tagline-link';
+    a.textContent = currentText();
+    // fade in
+    a.style.opacity = '0';
+    textEl.appendChild(a);
+    requestAnimationFrame(() => requestAnimationFrame(() => { a.style.opacity = '1'; }));
+  }
+
+  function hideLink() {
+    if (!linkShown) return;
+    linkShown = false;
+    textEl.textContent = currentText().slice(0, charIndex);
+  }
+
   function type() {
     if (!erasing) {
       charIndex++;
-      el.textContent = text.slice(0, charIndex);
-      if (charIndex === text.length) {
-        timer = setTimeout(() => { erasing = true; tick(); }, pauseEnd);
+      textEl.textContent = currentText().slice(0, charIndex);
+      if (charIndex === currentText().length) {
+        showLink();
+        timer = setTimeout(() => { erasing = true; tick(); }, currentMsg().pauseEnd);
         return;
       }
     } else {
+      hideLink();
       charIndex--;
-      el.textContent = text.slice(0, charIndex);
+      textEl.textContent = currentText().slice(0, charIndex);
       if (charIndex === 0) {
-        if (loop) {
-          erasing = false;
-          timer = setTimeout(tick, delay * 0.6);
-        } else {
-          // fully erased — hide cursor and mark idle
-          el.classList.add('no-cursor');
-          idle = true;
-        }
+        msgIndex = (msgIndex + 1) % TYPEWRITER_MESSAGES.length;
+        erasing = false;
+        timer = setTimeout(tick, 420);
         return;
       }
     }
@@ -601,23 +681,11 @@ function startTypewriter(elementId, text, { delay = 900, speed = 52, pauseEnd = 
   }
 
   function tick() {
-    const interval = erasing ? speed * 0.55 : speed;
+    const interval = erasing ? 28 : 52;
     timer = setTimeout(type, interval);
   }
 
-  // Hover on the tagline wrapper retypes when idle
-  const wrap = el.closest('.hero-tagline-wrap') || el;
-  wrap.addEventListener('mouseenter', () => {
-    if (!idle) return;
-    idle = false;
-    erasing = false;
-    charIndex = 0;
-    el.classList.remove('no-cursor');
-    clearTimer();
-    timer = setTimeout(tick, delay * 0.4);
-  });
-
-  timer = setTimeout(tick, delay);
+  timer = setTimeout(tick, 900);
 }
 
 // ============================================
@@ -634,7 +702,7 @@ document.addEventListener('DOMContentLoaded', () => {
     particleSystem = new ParticleSystem('hero-canvas');
   });
 
-  startTypewriter('hero-tagline', 'Grow your Net by solving exercises');
+  startTypewriter('hero-tagline');
 });
 
 // -------------------------------
